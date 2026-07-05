@@ -2,6 +2,8 @@ import http from 'http';
 import { Server } from 'socket.io';
 import app from './app';
 import { connectDB } from './config/db';
+import { initRedis } from './config/redis';
+import { startTelemetryBroadcast } from './services/telemetryBroadcast';
 import logger from './utils/logger';
 
 const PORT = process.env.PORT || 5000;
@@ -17,7 +19,7 @@ const io = new Server(server, {
   },
 });
 
-// Set the socket instance on the Express app for controller access.
+// Set the socket instance on the Express app for controller fallback (when Redis is unavailable).
 app.set('io', io);
 
 // Handle WebSockets connection lifecycle events.
@@ -35,7 +37,13 @@ const bootstrap = async () => {
     // 1. Connect database
     await connectDB();
 
-    // 2. Start listening for network traffic
+    // 2. Attempt Redis connection (non-fatal if unavailable)
+    await initRedis();
+
+    // 3. Start Redis subscriber → Socket.io bridge (no-op if Redis unavailable)
+    startTelemetryBroadcast(io);
+
+    // 4. Start listening for network traffic
     server.listen(PORT, () => {
       logger.info(`===================================================`);
       logger.info(` FleetDash Server is active on port ${PORT}`);
