@@ -8,6 +8,7 @@ import VehicleListPanel from './components/VehicleListPanel';
 import Loading from './components/Loading';
 import ErrorAlert from './components/ErrorAlert';
 import { apiService } from './services/api';
+import { decodeGlobalTelemetry, decodeVehicleTelemetry } from './services/binaryProtocol';
 import { Vehicle, TelemetryPoint } from './types';
 import { Truck, Navigation, Gauge, Zap } from 'lucide-react';
 
@@ -80,18 +81,11 @@ export const App: React.FC = () => {
     });
 
     // Listen for global telemetry pings to update list status and cached speed in sidebar
-    s.on('telemetry_global', (data: {
-      vehicleId: string;
-      timestamp: string;
-      lat: number;
-      lng: number;
-      speed: number;
-      fuel: number;
-      engineTemp: number;
-      status: 'active' | 'maintenance' | 'offline';
-    }) => {
+    s.on('telemetry_global', (raw: ArrayBuffer | any) => {
+      const data = raw instanceof ArrayBuffer ? decodeGlobalTelemetry(raw) : raw;
+      if (!data.vehicleId) return;
+
       setVehicles((prev) => {
-        // If vehicle exists, update it. If not, add a shell object.
         const idx = prev.findIndex((v) => v.vehicleId === data.vehicleId);
         if (idx !== -1) {
           const updated = [...prev];
@@ -135,9 +129,11 @@ export const App: React.FC = () => {
 
     const channelName = `telemetry:${selectedVehicleId}`;
 
-    const handleLivePoint = (point: TelemetryPoint & { vehicleId: string }) => {
+    const handleLivePoint = (raw: ArrayBuffer | any) => {
+      const point = raw instanceof ArrayBuffer ? decodeVehicleTelemetry(raw) : raw;
+      if (!point.timestamp) return;
+
       setTelemetryHistory((prev) => {
-        // Prevent duplicate pings by timestamp
         if (prev.some((p) => new Date(p.timestamp).getTime() === new Date(point.timestamp).getTime())) {
           return prev;
         }

@@ -3,6 +3,7 @@ import TelemetryBucket from '../models/TelemetryBucket';
 import Vehicle from '../models/Vehicle';
 import { runCoordinateParserWorker } from '../workers/workerPool';
 import { publisher, isAvailable as redisAvailable, TELEMETRY_CHANNEL, TELEMETRY_GLOBAL_CHANNEL } from '../config/redis';
+import { encodeVehicleTelemetry, encodeGlobalTelemetry } from '../utils/binaryProtocol';
 import logger from '../utils/logger';
 
 /**
@@ -87,8 +88,26 @@ export const ingestTelemetry = async (req: Request, res: Response, next: NextFun
     } else {
       const io = req.app.get('io');
       if (io) {
-        io.emit(`telemetry:${vehicleId}`, vehiclePayload);
-        io.emit('telemetry_global', { ...vehiclePayload, status: 'active' });
+        io.emit(`telemetry:${vehicleId}`, encodeVehicleTelemetry({
+          timestamp: pingTime,
+          lat,
+          lng,
+          speed: Number(speed),
+          fuel: Number(fuel),
+          engineTemp: Number(engineTemp),
+          distanceFromDepot,
+        }));
+        io.emit('telemetry_global', encodeGlobalTelemetry({
+          vehicleId,
+          timestamp: pingTime,
+          lat,
+          lng,
+          speed: Number(speed),
+          fuel: Number(fuel),
+          engineTemp: Number(engineTemp),
+          distanceFromDepot,
+          status: 'active',
+        }));
       }
     }
 
