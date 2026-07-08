@@ -1,5 +1,6 @@
 import React from 'react';
-import { Activity, Radio, Truck } from 'lucide-react';
+import { Activity, Moon, Radio, Sun, Truck } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 interface NavbarProps {
   socketConnected: boolean;
@@ -7,6 +8,8 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ socketConnected, totalVehicles }) => {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <header className="navbar">
       <div className="nav-brand">
@@ -15,6 +18,25 @@ export const Navbar: React.FC<NavbarProps> = ({ socketConnected, totalVehicles }
       </div>
 
       <div className="nav-status">
+        <button
+          onClick={toggleTheme}
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          style={{
+            background: 'none',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            padding: '8px',
+            cursor: 'pointer',
+            color: 'var(--text-secondary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s',
+          }}
+        >
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
           <Truck size={16} />
           <span>Active Fleet: <strong>{totalVehicles}</strong></span>
