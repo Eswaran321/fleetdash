@@ -418,6 +418,99 @@ body {
   margin: 16px 0;
 }
 
+/* ===== Light Theme ===== */
+[data-theme="light"] {
+  --bg-main: #f1f5f9;
+  --bg-panel: rgba(255, 255, 255, 0.85);
+  --bg-panel-solid: #ffffff;
+  --border-color: rgba(100, 116, 139, 0.2);
+  --border-glow: rgba(56, 189, 248, 0.4);
+
+  --primary-accent: #0284c7;
+  --primary-accent-rgb: 2, 132, 199;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+
+  --text-main: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --shadow-premium: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .glass-panel {
+  background: var(--bg-panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+}
+
+[data-theme="light"] .glass-panel:hover {
+  border-color: rgba(2, 132, 199, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(2, 132, 199, 0.08);
+}
+
+[data-theme="light"] .navbar {
+  background: rgba(255, 255, 255, 0.85);
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="light"] .sidebar {
+  background: rgba(255, 255, 255, 0.5);
+  border-right-color: var(--border-color);
+}
+
+[data-theme="light"] .sidebar-item:hover,
+[data-theme="light"] .sidebar-item.active {
+  background: rgba(2, 132, 199, 0.08);
+}
+
+[data-theme="light"] .map-canvas-area {
+  background: radial-gradient(circle at center, #e2e8f0 0%, #f8fafc 100%);
+}
+
+[data-theme="light"] .status-indicator {
+  background: rgba(5, 150, 105, 0.08);
+  border-color: rgba(5, 150, 105, 0.2);
+}
+
+[data-theme="light"] .vehicle-item:hover,
+[data-theme="light"] .vehicle-item.selected {
+  background: rgba(2, 132, 199, 0.06);
+  border-color: rgba(2, 132, 199, 0.25);
+}
+
+[data-theme="light"] .search-input {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+[data-theme="light"] .error-banner {
+  background: rgba(220, 38, 38, 0.06);
+  border-color: rgba(220, 38, 38, 0.15);
+  color: #b91c1c;
+}
+
+[data-theme="light"] .status-badge.active {
+  background: rgba(5, 150, 105, 0.1);
+  border-color: rgba(5, 150, 105, 0.25);
+}
+
+[data-theme="light"] .status-badge.offline {
+  background: rgba(100, 116, 139, 0.1);
+  border-color: rgba(100, 116, 139, 0.2);
+}
+
+[data-theme="light"] .stat-icon-wrapper {
+  background: rgba(2, 132, 199, 0.08);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: #e2e8f0;
+}
+
 /* Animations */
 @keyframes spin {
   to { transform: rotate(360deg); }
