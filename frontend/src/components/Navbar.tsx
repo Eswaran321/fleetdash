@@ -19,20 +19,9 @@ export const Navbar: React.FC<NavbarProps> = ({ socketConnected, totalVehicles }
 
       <div className="nav-status">
         <button
+          className="theme-toggle"
           onClick={toggleTheme}
           title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-          style={{
-            background: 'none',
-            border: '1px solid var(--border-color)',
-            borderRadius: '8px',
-            padding: '8px',
-            cursor: 'pointer',
-            color: 'var(--text-secondary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s',
-          }}
         >
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
