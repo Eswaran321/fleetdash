@@ -12,14 +12,24 @@ const ThemeContext = createContext<ThemeContextValue>({
   toggleTheme: () => {},
 });
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
+function getInitialTheme(): Theme {
+  try {
     return (localStorage.getItem('fleetdash-theme') as Theme) || 'dark';
-  });
+  } catch {
+    return 'dark';
+  }
+}
+
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('fleetdash-theme', theme);
+    try {
+      localStorage.setItem('fleetdash-theme', theme);
+    } catch {
+      // localStorage unavailable (private browsing, quota, etc.)
+    }
   }, [theme]);
 
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));

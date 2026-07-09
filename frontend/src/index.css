@@ -94,6 +94,30 @@ body {
   z-index: 10;
 }
 
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: rgba(56, 189, 248, 0.08);
+  color: var(--primary-accent);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+}
+
 .nav-brand {
   display: flex;
   align-items: center;
@@ -479,6 +503,12 @@ body {
 [data-theme="light"] .vehicle-item.selected {
   background: rgba(2, 132, 199, 0.06);
   border-color: rgba(2, 132, 199, 0.25);
+}
+
+[data-theme="light"] .theme-toggle:hover {
+  background: rgba(2, 132, 199, 0.08);
+  color: var(--primary-accent);
+  border-color: rgba(2, 132, 199, 0.3);
 }
 
 [data-theme="light"] .search-input {
