@@ -2,6 +2,25 @@ import React, { useEffect, useRef } from 'react';
 import { Compass } from 'lucide-react';
 import { Vehicle, TelemetryPoint } from '../types';
 
+const MIN_LAT = 12.9300;
+const MAX_LAT = 13.0200;
+const MIN_LNG = 77.5400;
+const MAX_LNG = 77.6400;
+const DEPOT_LAT = 12.9716;
+const DEPOT_LNG = 77.5946;
+
+function isLightTheme(): boolean {
+  return document.documentElement.getAttribute('data-theme') === 'light';
+}
+
+function getX(lng: number, width: number): number {
+  return ((lng - MIN_LNG) / (MAX_LNG - MIN_LNG)) * width;
+}
+
+function getY(lat: number, height: number): number {
+  return height - ((lat - MIN_LAT) / (MAX_LAT - MIN_LAT)) * height;
+}
+
 interface MapPlaceholderProps {
   allVehicles: Vehicle[];
   selectedVehicle: Vehicle | null;
@@ -14,14 +33,13 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
   telemetryHistory,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const allVehiclesRef = useRef(allVehicles);
+  const selectedVehicleRef = useRef(selectedVehicle);
+  const telemetryHistoryRef = useRef(telemetryHistory);
 
-  // Constants mapping GPS bounds to the Canvas coordinate grid (Centered on Bangalore)
-  const MIN_LAT = 12.9300;
-  const MAX_LAT = 13.0200;
-  const MIN_LNG = 77.5400;
-  const MAX_LNG = 77.6400;
-  const DEPOT_LAT = 12.9716;
-  const DEPOT_LNG = 77.5946;
+  allVehiclesRef.current = allVehicles;
+  selectedVehicleRef.current = selectedVehicle;
+  telemetryHistoryRef.current = telemetryHistory;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -34,28 +52,32 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
     let pulseRadius = 6;
     let pulseGrowing = true;
 
-    // Helper to project GPS values to Canvas X coordinate
-    const getX = (lng: number, width: number) => {
-      const scale = (lng - MIN_LNG) / (MAX_LNG - MIN_LNG);
-      return scale * width;
-    };
-
-    // Helper to project GPS values to Canvas Y coordinate (y-axis is inverted in canvas)
-    const getY = (lat: number, height: number) => {
-      const scale = (lat - MIN_LAT) / (MAX_LAT - MIN_LAT);
-      return height - (scale * height);
-    };
-
     const drawMap = () => {
       const width = canvas.width = canvas.parentElement?.clientWidth || 600;
       const height = canvas.height = canvas.parentElement?.clientHeight || 380;
+      const light = isLightTheme();
+
+      const bgColor = light ? '#f8fafc' : '#060913';
+      const gridColor = light ? 'rgba(100, 116, 139, 0.08)' : 'rgba(56, 189, 248, 0.05)';
+      const depotColor = '#818cf8';
+      const trajectoryColor = light ? 'rgba(2, 132, 199, 0.5)' : 'rgba(56, 189, 248, 0.6)';
+      const pulseColor = light ? 'rgba(2, 132, 199, 0.12)' : 'rgba(56, 189, 248, 0.15)';
+      const activePin = light ? '#059669' : '#10b981';
+      const offlinePin = light ? '#94a3b8' : '#64748b';
+      const selectedStroke = light ? '#0284c7' : '#38bdf8';
+      const pinStroke = light ? '#f8fafc' : '#060913';
+      const labelActive = light ? '#0284c7' : '#38bdf8';
+      const labelOffline = light ? '#64748b' : '#94a3b8';
+
+      const vehicles = allVehiclesRef.current;
+      const selected = selectedVehicleRef.current;
+      const history = telemetryHistoryRef.current;
 
       // 1. Draw Map Background grid
-      ctx.fillStyle = '#060913';
+      ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, width, height);
 
-      // Grid lines
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
+      ctx.strokeStyle = gridColor;
       ctx.lineWidth = 1;
       const gridSize = 40;
       for (let x = 0; x < width; x += gridSize) {
@@ -74,7 +96,7 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
       // 2. Draw Depot
       const depotX = getX(DEPOT_LNG, width);
       const depotY = getY(DEPOT_LAT, height);
-      ctx.fillStyle = '#818cf8';
+      ctx.fillStyle = depotColor;
       ctx.beginPath();
       ctx.arc(depotX, depotY, 8, 0, Math.PI * 2);
       ctx.fill();
@@ -82,66 +104,59 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      // Label Depot
-      ctx.fillStyle = '#818cf8';
+      ctx.fillStyle = depotColor;
       ctx.font = '10px Inter';
       ctx.fillText('Central Depot', depotX + 12, depotY + 4);
 
       // 3. Draw Trajectory Path for selected vehicle
-      if (selectedVehicle && telemetryHistory.length > 0) {
+      if (selected && history.length > 0) {
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+        ctx.strokeStyle = trajectoryColor;
         ctx.lineWidth = 2.5;
-        ctx.setLineDash([5, 5]); // Dashed line for path
+        ctx.setLineDash([5, 5]);
 
-        telemetryHistory.forEach((point, idx) => {
+        history.forEach((point, idx) => {
           const px = getX(point.lng, width);
           const py = getY(point.lat, height);
-          if (idx === 0) {
-            ctx.moveTo(px, py);
-          } else {
-            ctx.lineTo(px, py);
-          }
+          if (idx === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
         });
         ctx.stroke();
-        ctx.setLineDash([]); // Reset line dash
+        ctx.setLineDash([]);
       }
 
       // 4. Draw All Vehicles
-      allVehicles.forEach((vehicle) => {
+      vehicles.forEach((vehicle) => {
         if (!vehicle.lastLocation) return;
 
         const vx = getX(vehicle.lastLocation.lng, width);
         const vy = getY(vehicle.lastLocation.lat, height);
-        const isSelected = selectedVehicle && vehicle.vehicleId === selectedVehicle.vehicleId;
+        const isSelected = selected && vehicle.vehicleId === selected.vehicleId;
 
-        // Pulse effect animation variables
         if (isSelected) {
-          ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+          ctx.fillStyle = pulseColor;
           ctx.beginPath();
           ctx.arc(vx, vy, pulseRadius * 2, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        // Draw pin dot
-        ctx.fillStyle = vehicle.status === 'active' ? '#10b981' : '#64748b';
+        ctx.fillStyle = vehicle.status === 'active' ? activePin : offlinePin;
         ctx.beginPath();
         ctx.arc(vx, vy, isSelected ? 7 : 5, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.strokeStyle = isSelected ? '#38bdf8' : '#060913';
+        ctx.strokeStyle = isSelected ? selectedStroke : pinStroke;
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        // Draw text label next to selected vehicle
         if (isSelected || vehicle.status === 'active') {
-          ctx.fillStyle = isSelected ? '#38bdf8' : '#94a3b8';
+          ctx.fillStyle = isSelected ? labelActive : labelOffline;
           ctx.font = isSelected ? 'bold 11px Inter' : '10px Inter';
           ctx.fillText(vehicle.vehicleId, vx + 10, vy + 4);
         }
       });
 
-      // 5. Update pulse radius for active animations
+      // 5. Update pulse
       if (pulseGrowing) {
         pulseRadius += 0.15;
         if (pulseRadius > 10) pulseGrowing = false;
@@ -158,7 +173,7 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [allVehicles, selectedVehicle, telemetryHistory]);
+  }, []);
 
   return (
     <div className="glass-panel map-container">
