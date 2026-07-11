@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Compass } from 'lucide-react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Compass, Maximize2, Minimize2 } from 'lucide-react';
 import { Vehicle, TelemetryPoint } from '../types';
 
 const MIN_LAT = 12.9300;
@@ -33,13 +33,30 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
   telemetryHistory,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const allVehiclesRef = useRef(allVehicles);
   const selectedVehicleRef = useRef(selectedVehicle);
   const telemetryHistoryRef = useRef(telemetryHistory);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   allVehiclesRef.current = allVehicles;
   selectedVehicleRef.current = selectedVehicle;
   telemetryHistoryRef.current = telemetryHistory;
+
+  const toggleFullscreen = useCallback(() => {
+    if (!containerRef.current) return;
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -176,13 +193,13 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
   }, []);
 
   return (
-    <div className="glass-panel map-container">
+    <div className="glass-panel map-container" ref={containerRef}>
       <div className="map-header">
         <h3 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Compass size={18} style={{ color: 'var(--primary-accent)' }} />
           <span>Active Telemetry Map</span>
         </h3>
-        <div style={{ display: 'flex', gap: '16px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+        <div style={{ display: 'flex', gap: '16px', fontSize: '0.75rem', color: 'var(--text-secondary)', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981' }} />
             <span>Active</span>
@@ -195,6 +212,15 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
             <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#64748b' }} />
             <span>Offline</span>
           </div>
+          <button
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit fullscreen' : 'View fullscreen'}
+            className="theme-toggle"
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', padding: '4px 8px' }}
+          >
+            {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            <span>{isFullscreen ? 'Exit' : 'Fullscreen'}</span>
+          </button>
         </div>
       </div>
 
