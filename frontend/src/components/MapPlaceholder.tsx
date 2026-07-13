@@ -37,6 +37,7 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
   const allVehiclesRef = useRef(allVehicles);
   const selectedVehicleRef = useRef(selectedVehicle);
   const telemetryHistoryRef = useRef(telemetryHistory);
+  const prevPositionsRef = useRef<Map<string, { lat: number; lng: number }>>(new Map());
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   allVehiclesRef.current = allVehicles;
@@ -143,12 +144,23 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
       }
 
       // 4. Draw All Vehicles
+      const prevPositions = prevPositionsRef.current;
       vehicles.forEach((vehicle) => {
         if (!vehicle.lastLocation) return;
 
         const vx = getX(vehicle.lastLocation.lng, width);
         const vy = getY(vehicle.lastLocation.lat, height);
         const isSelected = selected && vehicle.vehicleId === selected.vehicleId;
+
+        // Compute heading from position delta
+        const prev = prevPositions.get(vehicle.vehicleId);
+        let heading = 0;
+        if (prev) {
+          const prevX = getX(prev.lng, width);
+          const prevY = getY(prev.lat, height);
+          heading = Math.atan2(vy - prevY, vx - prevX);
+        }
+        prevPositions.set(vehicle.vehicleId, { lat: vehicle.lastLocation.lat, lng: vehicle.lastLocation.lng });
 
         if (isSelected) {
           ctx.fillStyle = pulseColor;
@@ -157,19 +169,30 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
           ctx.fill();
         }
 
-        ctx.fillStyle = vehicle.status === 'active' ? activePin : offlinePin;
-        ctx.beginPath();
-        ctx.arc(vx, vy, isSelected ? 7 : 5, 0, Math.PI * 2);
-        ctx.fill();
+        // Draw vehicle as a directional triangle
+        const size = isSelected ? 8 : 6;
+        ctx.save();
+        ctx.translate(vx, vy);
+        ctx.rotate(heading);
 
+        ctx.beginPath();
+        ctx.moveTo(size, 0);
+        ctx.lineTo(-size, -size * 0.6);
+        ctx.lineTo(-size, size * 0.6);
+        ctx.closePath();
+
+        ctx.fillStyle = vehicle.status === 'active' ? activePin : offlinePin;
+        ctx.fill();
         ctx.strokeStyle = isSelected ? selectedStroke : pinStroke;
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
+        ctx.restore();
+
         if (isSelected || vehicle.status === 'active') {
           ctx.fillStyle = isSelected ? labelActive : labelOffline;
           ctx.font = isSelected ? 'bold 11px Inter' : '10px Inter';
-          ctx.fillText(vehicle.vehicleId, vx + 10, vy + 4);
+          ctx.fillText(vehicle.vehicleId, vx + 12, vy + 4);
         }
       });
 
