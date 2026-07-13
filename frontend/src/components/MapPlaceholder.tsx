@@ -169,24 +169,34 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
           ctx.fill();
         }
 
-        // Draw vehicle as a directional triangle
-        const size = isSelected ? 8 : 6;
-        ctx.save();
-        ctx.translate(vx, vy);
-        ctx.rotate(heading);
-
-        ctx.beginPath();
-        ctx.moveTo(size, 0);
-        ctx.lineTo(-size, -size * 0.6);
-        ctx.lineTo(-size, size * 0.6);
-        ctx.closePath();
-
+        // Draw vehicle circle
         ctx.fillStyle = vehicle.status === 'active' ? activePin : offlinePin;
+        ctx.beginPath();
+        ctx.arc(vx, vy, isSelected ? 7 : 5, 0, Math.PI * 2);
         ctx.fill();
+
         ctx.strokeStyle = isSelected ? selectedStroke : pinStroke;
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
+        // Draw direction arrow
+        const arrowColor = isSelected ? selectedStroke : (vehicle.status === 'active' ? activePin : '#94a3b8');
+        ctx.save();
+        ctx.translate(vx, vy);
+        ctx.rotate(heading);
+        ctx.strokeStyle = arrowColor;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(8, 0);
+        ctx.lineTo(24, 0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(24, 0);
+        ctx.lineTo(15, -6);
+        ctx.lineTo(15, 6);
+        ctx.closePath();
+        ctx.fillStyle = arrowColor;
+        ctx.fill();
         ctx.restore();
 
         if (isSelected || vehicle.status === 'active') {
