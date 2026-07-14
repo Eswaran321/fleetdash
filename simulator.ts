@@ -14,13 +14,18 @@ interface VehicleState {
 const API_URL = 'http://localhost:5000/telemetry';
 const UPDATE_INTERVAL_MS = 3000;
 
-// Initialize 5 distinct fleet vehicles with different start positions around Bangalore, India.
+// Initialize 10 distinct fleet vehicles with different start positions around Bangalore, India.
 const vehicles: VehicleState[] = [
   { vehicleId: 'V-001', name: 'Cargo Truck Alpha', lat: 12.9716, lng: 77.5946, speed: 50, fuel: 85.5, engineTemp: 82, heading: 0 },
   { vehicleId: 'V-002', name: 'Delivery Van Beta', lat: 12.9801, lng: 77.5802, speed: 65, fuel: 92.0, engineTemp: 80, heading: Math.PI / 4 },
   { vehicleId: 'V-003', name: 'Service Car Gamma', lat: 12.9605, lng: 77.6010, speed: 40, fuel: 60.3, engineTemp: 85, heading: Math.PI / 2 },
   { vehicleId: 'V-004', name: 'Heavy Hauler Delta', lat: 12.9512, lng: 77.5701, speed: 30, fuel: 45.1, engineTemp: 90, heading: Math.PI },
   { vehicleId: 'V-005', name: 'Express Bike Epsilon', lat: 12.9902, lng: 77.6115, speed: 75, fuel: 78.4, engineTemp: 78, heading: -Math.PI / 4 },
+  { vehicleId: 'V-006', name: 'Refrigerated Van Zeta', lat: 12.9650, lng: 77.5600, speed: 55, fuel: 72.0, engineTemp: 83, heading: Math.PI / 6 },
+  { vehicleId: 'V-007', name: 'Passenger Bus Eta', lat: 12.9850, lng: 77.6050, speed: 35, fuel: 90.5, engineTemp: 88, heading: -Math.PI / 3 },
+  { vehicleId: 'V-008', name: 'Utility Pickup Theta', lat: 12.9550, lng: 77.5850, speed: 60, fuel: 55.2, engineTemp: 86, heading: Math.PI / 3 },
+  { vehicleId: 'V-009', name: 'Tanker Truck Iota', lat: 12.9750, lng: 77.5750, speed: 25, fuel: 95.0, engineTemp: 79, heading: -Math.PI / 6 },
+  { vehicleId: 'V-010', name: 'Courier Scooter Kappa', lat: 12.9950, lng: 77.5900, speed: 80, fuel: 68.7, engineTemp: 76, heading: Math.PI / 5 },
 ];
 
 /**
