@@ -37,7 +37,7 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
   const allVehiclesRef = useRef(allVehicles);
   const selectedVehicleRef = useRef(selectedVehicle);
   const telemetryHistoryRef = useRef(telemetryHistory);
-  const prevPositionsRef = useRef<Map<string, { lat: number; lng: number }>>(new Map());
+  const prevPositionsRef = useRef<Map<string, { lat: number; lng: number; heading: number }>>(new Map());
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   allVehiclesRef.current = allVehicles;
@@ -152,15 +152,21 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
         const vy = getY(vehicle.lastLocation.lat, height);
         const isSelected = selected && vehicle.vehicleId === selected.vehicleId;
 
-        // Compute heading from position delta
+        // Compute heading from position delta — only update on actual movement
         const prev = prevPositions.get(vehicle.vehicleId);
-        let heading = 0;
+        let heading = prev ? prev.heading : 0;
         if (prev) {
           const prevX = getX(prev.lng, width);
           const prevY = getY(prev.lat, height);
-          heading = Math.atan2(vy - prevY, vx - prevX);
+          const dx = vx - prevX;
+          const dy = vy - prevY;
+          if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+            heading = Math.atan2(dy, dx);
+            prevPositions.set(vehicle.vehicleId, { lat: vehicle.lastLocation.lat, lng: vehicle.lastLocation.lng, heading });
+          }
+        } else {
+          prevPositions.set(vehicle.vehicleId, { lat: vehicle.lastLocation.lat, lng: vehicle.lastLocation.lng, heading: 0 });
         }
-        prevPositions.set(vehicle.vehicleId, { lat: vehicle.lastLocation.lat, lng: vehicle.lastLocation.lng });
 
         if (isSelected) {
           ctx.fillStyle = pulseColor;
