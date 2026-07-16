@@ -83,8 +83,12 @@ export const ingestTelemetry = async (req: Request, res: Response, next: NextFun
     };
 
     if (redisAvailable && publisher) {
-      publisher.publish(TELEMETRY_CHANNEL, JSON.stringify(vehiclePayload));
-      publisher.publish(TELEMETRY_GLOBAL_CHANNEL, JSON.stringify({ ...vehiclePayload, status: 'active' }));
+      publisher.publish(TELEMETRY_CHANNEL, JSON.stringify(vehiclePayload)).catch((err) => {
+        logger.warn(`Redis publish failed on ${TELEMETRY_CHANNEL}: ${err.message}`);
+      });
+      publisher.publish(TELEMETRY_GLOBAL_CHANNEL, JSON.stringify({ ...vehiclePayload, status: 'active' })).catch((err) => {
+        logger.warn(`Redis publish failed on ${TELEMETRY_GLOBAL_CHANNEL}: ${err.message}`);
+      });
     } else {
       const io = req.app.get('io');
       if (io) {
