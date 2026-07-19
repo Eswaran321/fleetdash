@@ -44,7 +44,7 @@ export const options = {
     { duration: '30s', target: 200 },
     { duration: '30s', target: 500 },
     { duration: '30s', target: 1000 },
-    { duration: '30s', target: 2000 },
+    { duration: '2m', target: 2000 },
     { duration: '30s', target: 0 },
   ],
   thresholds: {
@@ -81,6 +81,23 @@ function telemetryIngestionTest() {
       }
     });
   });
+}
+
+export function teardown() {
+  const res = http.get(`${BASE_URL}/vehicles`);
+  check(res, {
+    'teardown: vehicles endpoint is reachable': (r) => r.status === 200,
+  });
+  if (res.status === 200) {
+    try {
+      const body = JSON.parse(res.body);
+      console.log(`Total vehicles in DB after load test: ${body.count}`);
+      const allHaveLocations = body.data.every((v) => v.lastLocation);
+      console.log(`All vehicles have location data: ${allHaveLocations}`);
+    } catch (e) {
+      console.error(`Teardown parse error: ${e.message}`);
+    }
+  }
 }
 
 export default function () {
