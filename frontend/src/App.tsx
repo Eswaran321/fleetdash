@@ -9,10 +9,16 @@ import Loading from './components/Loading';
 import ErrorAlert from './components/ErrorAlert';
 import { apiService } from './services/api';
 import { decodeGlobalTelemetry, decodeVehicleTelemetry } from './services/binaryProtocol';
-import { Vehicle, TelemetryPoint } from './types';
-import { Truck, Navigation, Gauge, Zap } from 'lucide-react';
+import { Vehicle, TelemetryPoint, BreachAlert, GeofenceZone } from './types';
+import { Truck, Navigation, Gauge, Zap, MapPin } from 'lucide-react';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+
+const geofenceZones: GeofenceZone[] = [
+  { geofenceId: 'zone-depot', name: 'Central Depot', type: 'circle', center: { lat: 12.9716, lng: 77.5946 }, radius: 1.5, status: 'active' },
+  { geofenceId: 'zone-bangalore', name: 'Bangalore Operational Area', type: 'polygon', coordinates: [{ lat: 12.8000, lng: 77.4000 }, { lat: 12.8000, lng: 77.8000 }, { lat: 13.1000, lng: 77.8000 }, { lat: 13.1000, lng: 77.4000 }], status: 'active' },
+  { geofenceId: 'zone-north-corridor', name: 'North Corridor', type: 'circle', center: { lat: 13.0200, lng: 77.6200 }, radius: 2.0, status: 'active' },
+];
 
 export const App: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -21,6 +27,7 @@ export const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [socketConnected, setSocketConnected] = useState<boolean>(false);
+  const [breachAlerts, setBreachAlerts] = useState<BreachAlert[]>([]);
 
   // Reference for socket connection
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -78,6 +85,14 @@ export const App: React.FC = () => {
 
     s.on('disconnect', () => {
       setSocketConnected(false);
+    });
+
+    // Listen for geofence breach alerts
+    s.on('geofence:breach', (alert: BreachAlert) => {
+      setBreachAlerts((prev) => [alert, ...prev].slice(0, 20));
+      setTimeout(() => {
+        setBreachAlerts((prev) => prev.filter((a) => a.alertId !== alert.alertId));
+      }, 6000);
     });
 
     // Listen for global telemetry pings to update list status and cached speed in sidebar
@@ -180,6 +195,36 @@ export const App: React.FC = () => {
       <main className="main-content">
         {error && <ErrorAlert message={error} />}
 
+        {/* Geofence Breach Alert Toasts */}
+        {breachAlerts.length > 0 && (
+          <div style={{ position: 'fixed', top: '80px', right: '24px', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '380px' }}>
+            {breachAlerts.map((alert) => (
+              <div key={alert.alertId} className="glass-panel" style={{
+                padding: '12px 16px',
+                borderLeft: `3px solid ${alert.severity === 'critical' ? '#ef4444' : alert.severity === 'warning' ? '#f59e0b' : '#38bdf8'}`,
+                fontSize: '0.8rem',
+                animation: 'slideIn 0.3s ease',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <MapPin size={14} color={alert.breachType === 'entry' ? '#10b981' : '#f59e0b'} />
+                  <strong style={{ color: 'var(--text-main)' }}>{alert.geofenceName}</strong>
+                  <span style={{
+                    marginLeft: 'auto',
+                    fontSize: '0.7rem',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    background: alert.breachType === 'entry' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
+                    color: alert.breachType === 'entry' ? '#10b981' : '#f59e0b',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                  }}>{alert.breachType}</span>
+                </div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{alert.description}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Dashboard KPIs Grid */}
         <section className="stats-grid">
           <StatsCard 
@@ -214,6 +259,7 @@ export const App: React.FC = () => {
             allVehicles={vehicles} 
             selectedVehicle={selectedVehicle} 
             telemetryHistory={telemetryHistory} 
+            geofenceZones={geofenceZones}
           />
           <VehicleListPanel 
             vehicles={vehicles} 

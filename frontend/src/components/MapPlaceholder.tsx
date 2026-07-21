@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Compass, Maximize2, Minimize2 } from 'lucide-react';
-import { Vehicle, TelemetryPoint } from '../types';
+import { Vehicle, TelemetryPoint, GeofenceZone } from '../types';
 
 const MIN_LAT = 12.9300;
 const MAX_LAT = 13.0200;
@@ -25,24 +25,28 @@ interface MapPlaceholderProps {
   allVehicles: Vehicle[];
   selectedVehicle: Vehicle | null;
   telemetryHistory: TelemetryPoint[];
+  geofenceZones?: GeofenceZone[];
 }
 
 export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
   allVehicles,
   selectedVehicle,
   telemetryHistory,
+  geofenceZones = [],
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const allVehiclesRef = useRef(allVehicles);
   const selectedVehicleRef = useRef(selectedVehicle);
   const telemetryHistoryRef = useRef(telemetryHistory);
+  const geofenceZonesRef = useRef(geofenceZones);
   const prevPositionsRef = useRef<Map<string, { lat: number; lng: number; heading: number }>>(new Map());
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   allVehiclesRef.current = allVehicles;
   selectedVehicleRef.current = selectedVehicle;
   telemetryHistoryRef.current = telemetryHistory;
+  geofenceZonesRef.current = geofenceZones;
 
   const toggleFullscreen = useCallback(() => {
     if (!containerRef.current) return;
@@ -111,7 +115,52 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
         ctx.stroke();
       }
 
-      // 2. Draw Depot
+      // 2. Draw Geofence Zones
+      const zones = geofenceZonesRef.current;
+      zones.forEach((zone) => {
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.06)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+
+        if (zone.type === 'circle' && zone.center && zone.radius) {
+          const cx = getX(zone.center.lng, width);
+          const cy = getY(zone.center.lat, height);
+          const pxPerDeg = width / (MAX_LNG - MIN_LNG);
+          const r = zone.radius / 111.32 * pxPerDeg;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#f59e0b';
+          ctx.font = '9px Inter';
+          ctx.fillText(zone.name, cx + r + 4, cy + 3);
+          ctx.setLineDash([4, 4]);
+        }
+
+        if (zone.type === 'polygon' && zone.coordinates && zone.coordinates.length >= 3) {
+          ctx.beginPath();
+          zone.coordinates.forEach((coord, idx) => {
+            const px = getX(coord.lng, width);
+            const py = getY(coord.lat, height);
+            if (idx === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          });
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          ctx.setLineDash([]);
+          const label = zone.coordinates[0];
+          ctx.fillStyle = '#f59e0b';
+          ctx.font = '9px Inter';
+          ctx.fillText(zone.name, getX(label.lng, width) + 6, getY(label.lat, height) - 6);
+          ctx.setLineDash([4, 4]);
+        }
+      });
+      ctx.setLineDash([]);
+
+      // 3. Draw Depot
       const depotX = getX(DEPOT_LNG, width);
       const depotY = getY(DEPOT_LAT, height);
       ctx.fillStyle = depotColor;
