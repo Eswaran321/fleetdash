@@ -3,7 +3,9 @@ import TelemetryBucket from '../models/TelemetryBucket';
 import Vehicle from '../models/Vehicle';
 import { runCoordinateParserWorker } from '../workers/workerPool';
 import { publisher, isAvailable as redisAvailable, TELEMETRY_CHANNEL, TELEMETRY_GLOBAL_CHANNEL } from '../config/redis';
+import { BREACH_ALERT_CHANNEL } from '../types/breachAlert';
 import { encodeVehicleTelemetry, encodeGlobalTelemetry } from '../utils/binaryProtocol';
+import { geofenceService } from '../services/geofenceService';
 import logger from '../utils/logger';
 
 /**
@@ -113,6 +115,22 @@ export const ingestTelemetry = async (req: Request, res: Response, next: NextFun
           status: 'active',
         }));
       }
+    }
+
+    // 6. Run geofence boundary checks and broadcast any breach alerts
+    const alerts = geofenceService.checkPoint(vehicleId, lat, lng, Number(speed));
+    for (const alert of alerts) {
+      if (redisAvailable && publisher) {
+        publisher.publish(BREACH_ALERT_CHANNEL, JSON.stringify(alert)).catch((err) => {
+          logger.warn(`Redis publish failed on ${BREACH_ALERT_CHANNEL}: ${err.message}`);
+        });
+      } else {
+        const io = req.app.get('io');
+        if (io) {
+          io.emit(BREACH_ALERT_CHANNEL, alert);
+        }
+      }
+      logger.warn(`Geofence breach: ${alert.description}`);
     }
 
     logger.debug(`Ingested telemetry for vehicle ${vehicleId}. Distance from depot: ${distanceFromDepot.toFixed(2)} km`);

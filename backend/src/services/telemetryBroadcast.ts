@@ -1,5 +1,6 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { subscriber, isAvailable, TELEMETRY_CHANNEL, TELEMETRY_GLOBAL_CHANNEL } from '../config/redis';
+import { BREACH_ALERT_CHANNEL } from '../types/breachAlert';
 import { encodeVehicleTelemetry, encodeGlobalTelemetry } from '../utils/binaryProtocol';
 import logger from '../utils/logger';
 
@@ -31,6 +32,8 @@ function parseAndEmit(channel: string, message: string, io: SocketIOServer): voi
         status: data.status,
       });
       io.emit('telemetry_global', binary);
+    } else if (channel === BREACH_ALERT_CHANNEL) {
+      io.emit(BREACH_ALERT_CHANNEL, data);
     }
   } catch (err: any) {
     logger.error(`Failed to process ${channel}: ${err.message}`);
@@ -43,12 +46,12 @@ export function startTelemetryBroadcast(io: SocketIOServer): void {
     return;
   }
 
-  subscriber.subscribe(TELEMETRY_CHANNEL, TELEMETRY_GLOBAL_CHANNEL, (err, count) => {
+  subscriber.subscribe(TELEMETRY_CHANNEL, TELEMETRY_GLOBAL_CHANNEL, BREACH_ALERT_CHANNEL, (err, count) => {
     if (err) {
       logger.error(`Redis subscription failed: ${err.message}`);
       return;
     }
-    logger.info(`Subscribed to ${count} Redis telemetry channels`);
+    logger.info(`Subscribed to ${count} Redis channels (telemetry + geofence)`);
   });
 
   subscriber.on('message', (channel, message) => {
