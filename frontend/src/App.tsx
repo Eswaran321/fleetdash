@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -11,6 +12,7 @@ import { apiService } from './services/api';
 import { decodeGlobalTelemetry, decodeVehicleTelemetry } from './services/binaryProtocol';
 import { Vehicle, TelemetryPoint, BreachAlert, GeofenceZone } from './types';
 import { Truck, Navigation, Gauge, Zap, MapPin } from 'lucide-react';
+import VehiclesPage from './pages/VehiclesPage';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
@@ -29,10 +31,8 @@ export const App: React.FC = () => {
   const [socketConnected, setSocketConnected] = useState<boolean>(false);
   const [breachAlerts, setBreachAlerts] = useState<BreachAlert[]>([]);
 
-  // Reference for socket connection
   const [socket, setSocket] = useState<Socket | null>(null);
 
-  // 1. Initial Load of vehicle lists
   useEffect(() => {
     const initData = async () => {
       try {
@@ -40,7 +40,6 @@ export const App: React.FC = () => {
         const res = await apiService.getVehicles();
         if (res.success) {
           setVehicles(res.data);
-          // Auto-select first vehicle if available
           if (res.data.length > 0) {
             setSelectedVehicleId(res.data[0].vehicleId);
           }
@@ -55,13 +54,12 @@ export const App: React.FC = () => {
     initData();
   }, []);
 
-  // 2. Fetch history when vehicle selection changes
   useEffect(() => {
     if (!selectedVehicleId) return;
 
     const loadHistory = async () => {
       try {
-        const res = await apiService.getVehicleTelemetry(selectedVehicleId, 2); // get last 2 hours of telemetry
+        const res = await apiService.getVehicleTelemetry(selectedVehicleId, 2);
         if (res.success) {
           setTelemetryHistory(res.data);
         }
@@ -73,21 +71,19 @@ export const App: React.FC = () => {
     loadHistory();
   }, [selectedVehicleId]);
 
-  // 3. Connect Socket.io for live updates
   useEffect(() => {
     const s = io(SOCKET_URL);
     setSocket(s);
 
     s.on('connect', () => {
       setSocketConnected(true);
-      setError(null); // Clear connection errors
+      setError(null);
     });
 
     s.on('disconnect', () => {
       setSocketConnected(false);
     });
 
-    // Listen for geofence breach alerts
     s.on('geofence:breach', (alert: BreachAlert) => {
       setBreachAlerts((prev) => [alert, ...prev].slice(0, 20));
       setTimeout(() => {
@@ -95,7 +91,6 @@ export const App: React.FC = () => {
       }, 6000);
     });
 
-    // Listen for global telemetry pings to update list status and cached speed in sidebar
     s.on('telemetry_global', (raw: ArrayBuffer | any) => {
       const data = raw instanceof ArrayBuffer ? decodeGlobalTelemetry(raw) : raw;
       if (!data.vehicleId) return;
@@ -138,7 +133,6 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // 4. Bind socket listener for the active vehicle's telemetry stream to append history points
   useEffect(() => {
     if (!socket || !selectedVehicleId) return;
 
@@ -170,7 +164,6 @@ export const App: React.FC = () => {
     };
   }, [socket, selectedVehicleId]);
 
-  // Compute stats metrics dynamically
   const totalVehiclesCount = vehicles.length;
   const activeVehiclesCount = vehicles.filter((v) => v.status === 'active').length;
   const avgSpeed = activeVehiclesCount > 0
@@ -179,23 +172,19 @@ export const App: React.FC = () => {
 
   const selectedVehicle = vehicles.find((v) => v.vehicleId === selectedVehicleId) || null;
 
-  if (loading) {
+  const Dashboard = () => {
+    if (loading) {
+      return (
+        <div style={{ height: '100vh', width: '100vw', backgroundColor: 'var(--bg-main)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <Loading />
+        </div>
+      );
+    }
+
     return (
-      <div style={{ height: '100vh', width: '100vw', backgroundColor: 'var(--bg-main)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <Loading />
-      </div>
-    );
-  }
-
-  return (
-    <div className="app-container">
-      <Navbar socketConnected={socketConnected} totalVehicles={totalVehiclesCount} />
-      <Sidebar />
-
-      <main className="main-content">
+      <>
         {error && <ErrorAlert message={error} />}
 
-        {/* Geofence Breach Alert Toasts */}
         {breachAlerts.length > 0 && (
           <div style={{ position: 'fixed', top: '80px', right: '24px', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '380px' }}>
             {breachAlerts.map((alert) => (
@@ -225,7 +214,6 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* Dashboard KPIs Grid */}
         <section className="stats-grid">
           <StatsCard 
             label="Total Fleet Vehicles" 
@@ -253,7 +241,6 @@ export const App: React.FC = () => {
           />
         </section>
 
-        {/* Main interactive split area */}
         <section className="dashboard-body">
           <MapPlaceholder 
             allVehicles={vehicles} 
@@ -267,8 +254,27 @@ export const App: React.FC = () => {
             onSelectVehicle={setSelectedVehicleId} 
           />
         </section>
-      </main>
-    </div>
+      </>
+    );
+  };
+
+  return (
+    <BrowserRouter>
+      <div className="app-container">
+        <Navbar socketConnected={socketConnected} totalVehicles={totalVehiclesCount} />
+        <Sidebar />
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/vehicles" element={<VehiclesPage />} />
+            <Route path="/vehicles/:vehicleId" element={<VehiclesPage />} />
+            <Route path="/geofences" element={<div className="page-container"><h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1.6rem' }}>Geofences</h1><p style={{ color: 'var(--text-muted)' }}>Coming in Part 2</p></div>} />
+            <Route path="/analytics" element={<div className="page-container"><h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1.6rem' }}>Analytics</h1><p style={{ color: 'var(--text-muted)' }}>Coming in Part 3</p></div>} />
+            <Route path="/settings" element={<div className="page-container"><h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1.6rem' }}>Settings</h1><p style={{ color: 'var(--text-muted)' }}>Coming in Part 4</p></div>} />
+          </Routes>
+        </main>
+      </div>
+    </BrowserRouter>
   );
 };
 
