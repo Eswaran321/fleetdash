@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Truck, Compass, BarChart3, Settings, ShieldCheck } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -6,34 +7,34 @@ export const Sidebar: React.FC = () => {
     <aside className="sidebar">
       <ul className="sidebar-menu">
         <li>
-          <div className="sidebar-item active">
+          <NavLink to="/" end className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}>
             <LayoutDashboard size={18} />
             <span>Dashboard</span>
-          </div>
+          </NavLink>
         </li>
         <li>
-          <div className="sidebar-item">
+          <NavLink to="/vehicles" className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}>
             <Truck size={18} />
             <span>Vehicles</span>
-          </div>
+          </NavLink>
         </li>
         <li>
-          <div className="sidebar-item">
+          <NavLink to="/geofences" className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}>
             <Compass size={18} />
             <span>Geofences</span>
-          </div>
+          </NavLink>
         </li>
         <li>
-          <div className="sidebar-item">
+          <NavLink to="/analytics" className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}>
             <BarChart3 size={18} />
             <span>Analytics</span>
-          </div>
+          </NavLink>
         </li>
         <li>
-          <div className="sidebar-item">
+          <NavLink to="/settings" className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}>
             <Settings size={18} />
             <span>Settings</span>
-          </div>
+          </NavLink>
         </li>
       </ul>
 
