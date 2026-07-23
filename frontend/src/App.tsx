@@ -13,6 +13,7 @@ import { decodeGlobalTelemetry, decodeVehicleTelemetry } from './services/binary
 import { Vehicle, TelemetryPoint, BreachAlert, GeofenceZone } from './types';
 import { Truck, Navigation, Gauge, Zap, MapPin } from 'lucide-react';
 import VehiclesPage from './pages/VehiclesPage';
+import GeofencesPage from './pages/GeofencesPage';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
@@ -30,6 +31,7 @@ export const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [socketConnected, setSocketConnected] = useState<boolean>(false);
   const [breachAlerts, setBreachAlerts] = useState<BreachAlert[]>([]);
+  const [breachHistory, setBreachHistory] = useState<BreachAlert[]>([]);
 
   const [socket, setSocket] = useState<Socket | null>(null);
 
@@ -86,6 +88,7 @@ export const App: React.FC = () => {
 
     s.on('geofence:breach', (alert: BreachAlert) => {
       setBreachAlerts((prev) => [alert, ...prev].slice(0, 20));
+      setBreachHistory((prev) => [alert, ...prev].slice(0, 500));
       setTimeout(() => {
         setBreachAlerts((prev) => prev.filter((a) => a.alertId !== alert.alertId));
       }, 6000);
@@ -268,7 +271,7 @@ export const App: React.FC = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/vehicles" element={<VehiclesPage />} />
             <Route path="/vehicles/:vehicleId" element={<VehiclesPage />} />
-            <Route path="/geofences" element={<div className="page-container"><h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1.6rem' }}>Geofences</h1><p style={{ color: 'var(--text-muted)' }}>Coming in Part 2</p></div>} />
+            <Route path="/geofences" element={<GeofencesPage zones={geofenceZones} breachHistory={breachHistory} />} />
             <Route path="/analytics" element={<div className="page-container"><h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1.6rem' }}>Analytics</h1><p style={{ color: 'var(--text-muted)' }}>Coming in Part 3</p></div>} />
             <Route path="/settings" element={<div className="page-container"><h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1.6rem' }}>Settings</h1><p style={{ color: 'var(--text-muted)' }}>Coming in Part 4</p></div>} />
           </Routes>
