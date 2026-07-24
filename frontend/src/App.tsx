@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -19,11 +19,19 @@ import SettingsPage from './pages/SettingsPage';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
-const geofenceZones: GeofenceZone[] = [
+const defaultGeofenceZones: GeofenceZone[] = [
   { geofenceId: 'zone-depot', name: 'Central Depot', type: 'circle', center: { lat: 12.9716, lng: 77.5946 }, radius: 1.5, status: 'active' },
   { geofenceId: 'zone-bangalore', name: 'Bangalore Operational Area', type: 'polygon', coordinates: [{ lat: 12.8000, lng: 77.4000 }, { lat: 12.8000, lng: 77.8000 }, { lat: 13.1000, lng: 77.8000 }, { lat: 13.1000, lng: 77.4000 }], status: 'active' },
   { geofenceId: 'zone-north-corridor', name: 'North Corridor', type: 'circle', center: { lat: 13.0200, lng: 77.6200 }, radius: 2.0, status: 'active' },
 ];
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem('fleetdash-settings');
+    if (raw) return JSON.parse(raw);
+  } catch { /* ignore */ }
+  return { notifications: true, autoRefresh: true, refreshInterval: 30, mapFollow: true, alertSound: true, alertDuration: 6 };
+}
 
 export const App: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -34,66 +42,115 @@ export const App: React.FC = () => {
   const [socketConnected, setSocketConnected] = useState<boolean>(false);
   const [breachAlerts, setBreachAlerts] = useState<BreachAlert[]>([]);
   const [breachHistory, setBreachHistory] = useState<BreachAlert[]>([]);
+  const [geofenceZones, setGeofenceZones] = useState<GeofenceZone[]>(defaultGeofenceZones);
+  const [settings, setSettings] = useState(loadSettings);
 
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
+  // Refresh settings from localStorage periodically
   useEffect(() => {
-    const initData = async () => {
-      try {
-        setLoading(true);
-        const res = await apiService.getVehicles();
-        if (res.success) {
-          setVehicles(res.data);
-          if (res.data.length > 0) {
-            setSelectedVehicleId(res.data[0].vehicleId);
-          }
-        }
-      } catch (err: any) {
-        setError(err.message || 'Failed to establish API connection to server.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initData();
+    const interval = setInterval(() => {
+      setSettings(loadSettings());
+    }, 2000);
+    return () => clearInterval(interval);
   }, []);
 
+  const fetchVehicles = useCallback(async () => {
+    try {
+      const res = await apiService.getVehicles();
+      if (res.success) {
+        setVehicles(res.data);
+        if (res.data.length > 0 && !selectedVehicleId) {
+          setSelectedVehicleId(res.data[0].vehicleId);
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to establish API connection to server.');
+    }
+  }, [selectedVehicleId]);
+
+  // Initial load
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+      await fetchVehicles();
+      setLoading(false);
+    };
+    init();
+  }, []);
+
+  // Auto-refresh vehicles based on settings
+  useEffect(() => {
+    if (!settings.autoRefresh) return;
+    const interval = setInterval(() => {
+      fetchVehicles();
+    }, settings.refreshInterval * 1000);
+    return () => clearInterval(interval);
+  }, [settings.autoRefresh, settings.refreshInterval, fetchVehicles]);
+
+  // Fetch geofence zones from backend
+  useEffect(() => {
+    const fetchZones = async () => {
+      try {
+        const res = await apiService.getGeofences();
+        if (res.success && res.data.length > 0) {
+          setGeofenceZones(res.data);
+        }
+      } catch {
+        // Keep default zones
+      }
+    };
+    fetchZones();
+  }, []);
+
+  // Fetch breach history from backend on mount
+  useEffect(() => {
+    const fetchBreaches = async () => {
+      try {
+        const res = await apiService.getBreachHistory(500);
+        if (res.success && res.data.length > 0) {
+          setBreachHistory(res.data);
+        }
+      } catch {
+        // Empty history is fine
+      }
+    };
+    fetchBreaches();
+  }, []);
+
+  // Telemetry history for selected vehicle
   useEffect(() => {
     if (!selectedVehicleId) return;
-
     const loadHistory = async () => {
       try {
         const res = await apiService.getVehicleTelemetry(selectedVehicleId, 2);
-        if (res.success) {
-          setTelemetryHistory(res.data);
-        }
+        if (res.success) setTelemetryHistory(res.data);
       } catch (err: any) {
         console.error(`Error loading history for ${selectedVehicleId}:`, err);
       }
     };
-
     loadHistory();
   }, [selectedVehicleId]);
 
+  // Socket.io connection
   useEffect(() => {
     const s = io(SOCKET_URL);
-    setSocket(s);
+    socketRef.current = s;
 
-    s.on('connect', () => {
-      setSocketConnected(true);
-      setError(null);
-    });
-
-    s.on('disconnect', () => {
-      setSocketConnected(false);
-    });
+    s.on('connect', () => setSocketConnected(true));
+    s.on('disconnect', () => setSocketConnected(false));
 
     s.on('geofence:breach', (alert: BreachAlert) => {
-      setBreachAlerts((prev) => [alert, ...prev].slice(0, 20));
+      const current = settingsRef.current;
+      if (current.notifications) {
+        setBreachAlerts((prev) => [alert, ...prev].slice(0, 20));
+        setTimeout(() => {
+          setBreachAlerts((prev) => prev.filter((a) => a.alertId !== alert.alertId));
+        }, current.alertDuration * 1000);
+      }
       setBreachHistory((prev) => [alert, ...prev].slice(0, 500));
-      setTimeout(() => {
-        setBreachAlerts((prev) => prev.filter((a) => a.alertId !== alert.alertId));
-      }, 6000);
     });
 
     s.on('telemetry_global', (raw: ArrayBuffer | any) => {
@@ -133,12 +190,12 @@ export const App: React.FC = () => {
       });
     });
 
-    return () => {
-      s.disconnect();
-    };
+    return () => { s.disconnect(); socketRef.current = null; };
   }, []);
 
+  // Bind live telemetry for selected vehicle
   useEffect(() => {
+    const socket = socketRef.current;
     if (!socket || !selectedVehicleId) return;
 
     const channelName = `telemetry:${selectedVehicleId}`;
@@ -163,11 +220,8 @@ export const App: React.FC = () => {
     };
 
     socket.on(channelName, handleLivePoint);
-
-    return () => {
-      socket.off(channelName, handleLivePoint);
-    };
-  }, [socket, selectedVehicleId]);
+    return () => { socket.off(channelName, handleLivePoint); };
+  }, [selectedVehicleId]);
 
   const totalVehiclesCount = vehicles.length;
   const activeVehiclesCount = vehicles.filter((v) => v.status === 'active').length;
@@ -190,7 +244,7 @@ export const App: React.FC = () => {
       <>
         {error && <ErrorAlert message={error} />}
 
-        {breachAlerts.length > 0 && (
+        {settings.notifications && breachAlerts.length > 0 && (
           <div style={{ position: 'fixed', top: '80px', right: '24px', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '380px' }}>
             {breachAlerts.map((alert) => (
               <div key={alert.alertId} className="glass-panel" style={{
@@ -220,48 +274,27 @@ export const App: React.FC = () => {
         )}
 
         <section className="stats-grid">
-          <StatsCard 
-            label="Total Fleet Vehicles" 
-            value={totalVehiclesCount} 
-            icon={<Truck size={22} />} 
-            accentColor="#818cf8"
-          />
-          <StatsCard 
-            label="Vehicles Online" 
-            value={activeVehiclesCount} 
-            icon={<Zap size={22} />} 
-            accentColor="#10b981"
-          />
-          <StatsCard 
-            label="Avg Speed (Active)" 
-            value={`${avgSpeed} km/h`} 
-            icon={<Gauge size={22} />} 
-            accentColor="#38bdf8"
-          />
-          <StatsCard 
-            label="Telemetry Streams" 
-            value={telemetryHistory.length} 
-            icon={<Navigation size={22} />} 
-            accentColor="#f59e0b"
-          />
+          <StatsCard label="Total Fleet Vehicles" value={totalVehiclesCount} icon={<Truck size={22} />} accentColor="#818cf8" />
+          <StatsCard label="Vehicles Online" value={activeVehiclesCount} icon={<Zap size={22} />} accentColor="#10b981" />
+          <StatsCard label="Avg Speed (Active)" value={`${avgSpeed} km/h`} icon={<Gauge size={22} />} accentColor="#38bdf8" />
+          <StatsCard label="Telemetry Streams" value={telemetryHistory.length} icon={<Navigation size={22} />} accentColor="#f59e0b" />
         </section>
 
         <section className="dashboard-body">
-          <MapPlaceholder 
-            allVehicles={vehicles} 
-            selectedVehicle={selectedVehicle} 
-            telemetryHistory={telemetryHistory} 
-            geofenceZones={geofenceZones}
-          />
-          <VehicleListPanel 
-            vehicles={vehicles} 
-            selectedVehicleId={selectedVehicleId} 
-            onSelectVehicle={setSelectedVehicleId} 
-          />
+          <MapPlaceholder allVehicles={vehicles} selectedVehicle={selectedVehicle} telemetryHistory={telemetryHistory} geofenceZones={geofenceZones} />
+          <VehicleListPanel vehicles={vehicles} selectedVehicleId={selectedVehicleId} onSelectVehicle={setSelectedVehicleId} />
         </section>
       </>
     );
   };
+
+  const NotFound = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '16px' }}>
+      <h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '3rem', fontWeight: 800, color: 'var(--primary-accent)' }}>404</h1>
+      <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Page not found</p>
+      <Link to="/" className="back-btn" style={{ textDecoration: 'none' }}>Back to Dashboard</Link>
+    </div>
+  );
 
   return (
     <BrowserRouter>
@@ -276,6 +309,7 @@ export const App: React.FC = () => {
             <Route path="/geofences" element={<GeofencesPage zones={geofenceZones} breachHistory={breachHistory} />} />
             <Route path="/analytics" element={<AnalyticsPage vehicles={vehicles} breachHistory={breachHistory} telemetryHistory={telemetryHistory} />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
       </div>

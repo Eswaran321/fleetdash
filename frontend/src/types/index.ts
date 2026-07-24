@@ -59,3 +59,16 @@ export interface GeofenceZone {
   coordinates?: { lat: number; lng: number }[];
   status: 'active' | 'inactive';
 }
+
+export interface FleetStats {
+  totalVehicles: number;
+  activeVehicles: number;
+  maintenanceVehicles: number;
+  offlineVehicles: number;
+  avgSpeed: number;
+  maxSpeed: number;
+  totalBreaches: number;
+  entryBreaches: number;
+  exitBreaches: number;
+  bucketCount: number;
+}

@@ -38,11 +38,23 @@ const defaultZones: GeofenceZone[] = [
 
 export class GeofenceService {
   private zones: GeofenceZone[];
+  private allZones: GeofenceZone[];
   private previousState: Map<string, Map<string, boolean>> = new Map();
+  private breachHistory: BreachAlert[] = [];
+  private static readonly MAX_BREACH_HISTORY = 500;
 
   constructor(zones: GeofenceZone[] = defaultZones) {
+    this.allZones = zones;
     this.zones = zones.filter((z) => z.status === 'active');
     logger.info(`GeofenceService initialized with ${this.zones.length} active zones`);
+  }
+
+  getZones(): GeofenceZone[] {
+    return this.allZones;
+  }
+
+  getBreachHistory(limit: number = 100): BreachAlert[] {
+    return this.breachHistory.slice(0, limit);
   }
 
   private wasInside(vehicleId: string, zoneId: string): boolean {
@@ -119,6 +131,10 @@ export class GeofenceService {
       }
 
       this.setInside(vehicleId, zone.geofenceId, isInside);
+    }
+
+    if (alerts.length > 0) {
+      this.breachHistory = [...alerts, ...this.breachHistory].slice(0, GeofenceService.MAX_BREACH_HISTORY);
     }
 
     return alerts;
