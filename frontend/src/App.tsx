@@ -15,6 +15,7 @@ import { Truck, Navigation, Gauge, Zap, MapPin } from 'lucide-react';
 import VehiclesPage from './pages/VehiclesPage';
 import GeofencesPage from './pages/GeofencesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import SettingsPage from './pages/SettingsPage';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
@@ -274,7 +275,7 @@ export const App: React.FC = () => {
             <Route path="/vehicles/:vehicleId" element={<VehiclesPage />} />
             <Route path="/geofences" element={<GeofencesPage zones={geofenceZones} breachHistory={breachHistory} />} />
             <Route path="/analytics" element={<AnalyticsPage vehicles={vehicles} breachHistory={breachHistory} telemetryHistory={telemetryHistory} />} />
-            <Route path="/settings" element={<div className="page-container"><h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1.6rem' }}>Settings</h1><p style={{ color: 'var(--text-muted)' }}>Coming in Part 4</p></div>} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </main>
       </div>
