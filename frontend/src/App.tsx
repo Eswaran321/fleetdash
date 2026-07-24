@@ -33,6 +33,96 @@ function loadSettings() {
   return { notifications: true, autoRefresh: true, refreshInterval: 30, mapFollow: true, alertSound: true, alertDuration: 6 };
 }
 
+// ---- Extracted Dashboard component (stable identity, no re-mount on parent state) ----
+interface DashboardProps {
+  loading: boolean;
+  error: string | null;
+  vehicles: Vehicle[];
+  selectedVehicleId: string | null;
+  setSelectedVehicleId: (id: string | null) => void;
+  telemetryHistory: TelemetryPoint[];
+  breachAlerts: BreachAlert[];
+  geofenceZones: GeofenceZone[];
+  showNotifications: boolean;
+}
+
+const Dashboard: React.FC<DashboardProps> = React.memo(({
+  loading, error, vehicles, selectedVehicleId, setSelectedVehicleId,
+  telemetryHistory, breachAlerts, geofenceZones, showNotifications,
+}) => {
+  if (loading) {
+    return (
+      <div style={{ height: '100vh', width: '100vw', backgroundColor: 'var(--bg-main)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <Loading />
+      </div>
+    );
+  }
+
+  const totalVehiclesCount = vehicles.length;
+  const activeVehiclesCount = vehicles.filter((v) => v.status === 'active').length;
+  const avgSpeed = activeVehiclesCount > 0
+    ? Math.round(vehicles.filter((v) => v.status === 'active').reduce((acc, v) => acc + (v.lastSpeed || 0), 0) / activeVehiclesCount)
+    : 0;
+  const selectedVehicle = vehicles.find((v) => v.vehicleId === selectedVehicleId) || null;
+
+  return (
+    <>
+      {error && <ErrorAlert message={error} />}
+
+      {showNotifications && breachAlerts.length > 0 && (
+        <div style={{ position: 'fixed', top: '80px', right: '24px', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '380px' }}>
+          {breachAlerts.map((alert) => (
+            <div key={alert.alertId} className="glass-panel" style={{
+              padding: '12px 16px',
+              borderLeft: `3px solid ${alert.severity === 'critical' ? '#ef4444' : alert.severity === 'warning' ? '#f59e0b' : '#38bdf8'}`,
+              fontSize: '0.8rem',
+              animation: 'slideIn 0.3s ease',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <MapPin size={14} color={alert.breachType === 'entry' ? '#10b981' : '#f59e0b'} />
+                <strong style={{ color: 'var(--text-main)' }}>{alert.geofenceName}</strong>
+                <span style={{
+                  marginLeft: 'auto',
+                  fontSize: '0.7rem',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  background: alert.breachType === 'entry' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
+                  color: alert.breachType === 'entry' ? '#10b981' : '#f59e0b',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                }}>{alert.breachType}</span>
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{alert.description}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <section className="stats-grid">
+        <StatsCard label="Total Fleet Vehicles" value={totalVehiclesCount} icon={<Truck size={22} />} accentColor="#818cf8" />
+        <StatsCard label="Vehicles Online" value={activeVehiclesCount} icon={<Zap size={22} />} accentColor="#10b981" />
+        <StatsCard label="Avg Speed (Active)" value={`${avgSpeed} km/h`} icon={<Gauge size={22} />} accentColor="#38bdf8" />
+        <StatsCard label="Telemetry Streams" value={telemetryHistory.length} icon={<Navigation size={22} />} accentColor="#f59e0b" />
+      </section>
+
+      <section className="dashboard-body">
+        <MapPlaceholder allVehicles={vehicles} selectedVehicle={selectedVehicle} telemetryHistory={telemetryHistory} geofenceZones={geofenceZones} />
+        <VehicleListPanel vehicles={vehicles} selectedVehicleId={selectedVehicleId} onSelectVehicle={setSelectedVehicleId} />
+      </section>
+    </>
+  );
+});
+
+// ---- 404 page ----
+const NotFound: React.FC = () => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '16px' }}>
+    <h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '3rem', fontWeight: 800, color: 'var(--primary-accent)' }}>404</h1>
+    <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Page not found</p>
+    <Link to="/" className="back-btn" style={{ textDecoration: 'none' }}>Back to Dashboard</Link>
+  </div>
+);
+
+// ---- App ----
 export const App: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
@@ -46,6 +136,8 @@ export const App: React.FC = () => {
   const [settings, setSettings] = useState(loadSettings);
 
   const socketRef = useRef<Socket | null>(null);
+  const selectedVehicleIdRef = useRef(selectedVehicleId);
+  selectedVehicleIdRef.current = selectedVehicleId;
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
@@ -62,14 +154,14 @@ export const App: React.FC = () => {
       const res = await apiService.getVehicles();
       if (res.success) {
         setVehicles(res.data);
-        if (res.data.length > 0 && !selectedVehicleId) {
+        if (res.data.length > 0 && selectedVehicleIdRef.current === null) {
           setSelectedVehicleId(res.data[0].vehicleId);
         }
       }
     } catch (err: any) {
       setError(err.message || 'Failed to establish API connection to server.');
     }
-  }, [selectedVehicleId]);
+  }, []);
 
   // Initial load
   useEffect(() => {
@@ -95,12 +187,8 @@ export const App: React.FC = () => {
     const fetchZones = async () => {
       try {
         const res = await apiService.getGeofences();
-        if (res.success && res.data.length > 0) {
-          setGeofenceZones(res.data);
-        }
-      } catch {
-        // Keep default zones
-      }
+        if (res.success && res.data.length > 0) setGeofenceZones(res.data);
+      } catch { /* keep defaults */ }
     };
     fetchZones();
   }, []);
@@ -110,12 +198,8 @@ export const App: React.FC = () => {
     const fetchBreaches = async () => {
       try {
         const res = await apiService.getBreachHistory(500);
-        if (res.success && res.data.length > 0) {
-          setBreachHistory(res.data);
-        }
-      } catch {
-        // Empty history is fine
-      }
+        if (res.success && res.data.length > 0) setBreachHistory(res.data);
+      } catch { /* empty is fine */ }
     };
     fetchBreaches();
   }, []);
@@ -224,77 +308,6 @@ export const App: React.FC = () => {
   }, [selectedVehicleId]);
 
   const totalVehiclesCount = vehicles.length;
-  const activeVehiclesCount = vehicles.filter((v) => v.status === 'active').length;
-  const avgSpeed = activeVehiclesCount > 0
-    ? Math.round(vehicles.filter((v) => v.status === 'active').reduce((acc, v) => acc + (v.lastSpeed || 0), 0) / activeVehiclesCount)
-    : 0;
-
-  const selectedVehicle = vehicles.find((v) => v.vehicleId === selectedVehicleId) || null;
-
-  const Dashboard = () => {
-    if (loading) {
-      return (
-        <div style={{ height: '100vh', width: '100vw', backgroundColor: 'var(--bg-main)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Loading />
-        </div>
-      );
-    }
-
-    return (
-      <>
-        {error && <ErrorAlert message={error} />}
-
-        {settings.notifications && breachAlerts.length > 0 && (
-          <div style={{ position: 'fixed', top: '80px', right: '24px', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '380px' }}>
-            {breachAlerts.map((alert) => (
-              <div key={alert.alertId} className="glass-panel" style={{
-                padding: '12px 16px',
-                borderLeft: `3px solid ${alert.severity === 'critical' ? '#ef4444' : alert.severity === 'warning' ? '#f59e0b' : '#38bdf8'}`,
-                fontSize: '0.8rem',
-                animation: 'slideIn 0.3s ease',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <MapPin size={14} color={alert.breachType === 'entry' ? '#10b981' : '#f59e0b'} />
-                  <strong style={{ color: 'var(--text-main)' }}>{alert.geofenceName}</strong>
-                  <span style={{
-                    marginLeft: 'auto',
-                    fontSize: '0.7rem',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    background: alert.breachType === 'entry' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
-                    color: alert.breachType === 'entry' ? '#10b981' : '#f59e0b',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                  }}>{alert.breachType}</span>
-                </div>
-                <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{alert.description}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <section className="stats-grid">
-          <StatsCard label="Total Fleet Vehicles" value={totalVehiclesCount} icon={<Truck size={22} />} accentColor="#818cf8" />
-          <StatsCard label="Vehicles Online" value={activeVehiclesCount} icon={<Zap size={22} />} accentColor="#10b981" />
-          <StatsCard label="Avg Speed (Active)" value={`${avgSpeed} km/h`} icon={<Gauge size={22} />} accentColor="#38bdf8" />
-          <StatsCard label="Telemetry Streams" value={telemetryHistory.length} icon={<Navigation size={22} />} accentColor="#f59e0b" />
-        </section>
-
-        <section className="dashboard-body">
-          <MapPlaceholder allVehicles={vehicles} selectedVehicle={selectedVehicle} telemetryHistory={telemetryHistory} geofenceZones={geofenceZones} />
-          <VehicleListPanel vehicles={vehicles} selectedVehicleId={selectedVehicleId} onSelectVehicle={setSelectedVehicleId} />
-        </section>
-      </>
-    );
-  };
-
-  const NotFound = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '16px' }}>
-      <h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '3rem', fontWeight: 800, color: 'var(--primary-accent)' }}>404</h1>
-      <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Page not found</p>
-      <Link to="/" className="back-btn" style={{ textDecoration: 'none' }}>Back to Dashboard</Link>
-    </div>
-  );
 
   return (
     <BrowserRouter>
@@ -303,7 +316,19 @@ export const App: React.FC = () => {
         <Sidebar />
         <main className="main-content">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={
+              <Dashboard
+                loading={loading}
+                error={error}
+                vehicles={vehicles}
+                selectedVehicleId={selectedVehicleId}
+                setSelectedVehicleId={setSelectedVehicleId}
+                telemetryHistory={telemetryHistory}
+                breachAlerts={breachAlerts}
+                geofenceZones={geofenceZones}
+                showNotifications={settings.notifications}
+              />
+            } />
             <Route path="/vehicles" element={<VehiclesPage />} />
             <Route path="/vehicles/:vehicleId" element={<VehiclesPage />} />
             <Route path="/geofences" element={<GeofencesPage zones={geofenceZones} breachHistory={breachHistory} />} />
