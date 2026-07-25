@@ -153,7 +153,7 @@ export const AnalyticsPage: React.FC<Props> = ({ vehicles, breachHistory, teleme
       </div>
 
       {/* Charts Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+      <div className="analytics-charts-grid">
         {/* Speed Distribution */}
         <div className="glass-panel" style={{ padding: '20px' }}>
           <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>

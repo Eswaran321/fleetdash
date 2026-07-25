@@ -134,6 +134,7 @@ export const App: React.FC = () => {
   const [breachHistory, setBreachHistory] = useState<BreachAlert[]>([]);
   const [geofenceZones, setGeofenceZones] = useState<GeofenceZone[]>(defaultGeofenceZones);
   const [settings, setSettings] = useState(loadSettings);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
   const selectedVehicleIdRef = useRef(selectedVehicleId);
@@ -312,8 +313,8 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <div className="app-container">
-        <Navbar socketConnected={socketConnected} totalVehicles={totalVehiclesCount} />
-        <Sidebar />
+        <Navbar socketConnected={socketConnected} totalVehicles={totalVehiclesCount} onMenuToggle={() => setSidebarOpen((p) => !p)} />
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main className="main-content">
           <Routes>
             <Route path="/" element={
