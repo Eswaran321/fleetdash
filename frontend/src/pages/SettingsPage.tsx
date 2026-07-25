@@ -86,7 +86,7 @@ export const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+      <div className="settings-grid">
         {/* Profile Section */}
         <div className="glass-panel settings-section">
           <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
