@@ -1056,20 +1056,20 @@ body {
   }
 
   .map-container {
-    max-height: 400px;
+    max-height: 450px;
   }
 
   .map-canvas-area {
-    min-height: 280px;
+    min-height: 300px;
   }
 
   .vehicle-panel {
     max-height: none;
   }
 
-  .settings-grid-2col,
-  .page-container > div[style*="grid-template-columns: 1fr 1fr"] {
-    grid-template-columns: 1fr !important;
+  .settings-grid,
+  .analytics-charts-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1166,7 +1166,7 @@ body {
     gap: 16px;
   }
 
-  /* Stats grid: 2 cols on tablet, 1 on small mobile */
+  /* Stats grid */
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
@@ -1184,18 +1184,21 @@ body {
     font-size: 0.7rem;
   }
 
-  /* Dashboard body: stack */
+  /* Dashboard body: stack, remove min-height */
   .dashboard-body {
     grid-template-columns: 1fr;
     min-height: auto;
   }
 
+  /* Map fixes for mobile */
   .map-container {
-    max-height: 350px;
+    max-height: none;
+    padding: 14px;
   }
 
   .map-canvas-area {
-    min-height: 240px;
+    min-height: 220px;
+    max-height: 50vh;
   }
 
   .vehicle-panel {
@@ -1231,9 +1234,10 @@ body {
     font-size: 0.75rem;
   }
 
-  /* Settings 2-col grid */
-  .page-container > div[style*="grid-template-columns"] {
-    grid-template-columns: 1fr !important;
+  /* Settings/Analytics grids */
+  .settings-grid,
+  .analytics-charts-grid {
+    grid-template-columns: 1fr;
   }
 
   /* System info grid */
@@ -1247,7 +1251,7 @@ body {
     font-size: 0.7rem;
   }
 
-  /* Tables: horizontal scroll */
+  /* Tables */
   .page-container table {
     font-size: 0.75rem;
   }
@@ -1255,11 +1259,6 @@ body {
   .page-container table th,
   .page-container table td {
     padding: 6px 8px;
-  }
-
-  /* Charts 2-col grid on analytics */
-  .analytics-charts-grid {
-    grid-template-columns: 1fr !important;
   }
 
   /* Toast alerts */
