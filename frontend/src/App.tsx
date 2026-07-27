@@ -52,7 +52,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
 }) => {
   if (loading) {
     return (
-      <div style={{ height: '100vh', width: '100vw', backgroundColor: 'var(--bg-main)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <div style={{ height: '100vh', width: '100%', backgroundColor: 'var(--bg-main)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <Loading />
       </div>
     );
