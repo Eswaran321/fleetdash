@@ -36,10 +36,11 @@ export async function initRedis(): Promise<void> {
       lazyConnect: true,
     });
 
-    await Promise.all([publisher.connect(), subscriber.connect()]);
-
+    // Attach error handlers BEFORE connecting to prevent unhandled error crashes
     publisher.on('error', (err) => logger.warn(`Redis publisher: ${err.message}`));
     subscriber.on('error', (err) => logger.warn(`Redis subscriber: ${err.message}`));
+
+    await Promise.all([publisher.connect(), subscriber.connect()]);
 
     isAvailable = true;
     logger.info('Redis connected and ready');
