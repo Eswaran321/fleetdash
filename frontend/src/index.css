@@ -1067,6 +1067,10 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .map-canvas-area {
+    max-height: 400px;
+  }
+
   .settings-grid,
   .analytics-charts-grid {
     grid-template-columns: 1fr;
@@ -1160,10 +1164,11 @@ body {
     z-index: 99;
   }
 
-  /* Main content */
+  /* Main content: allow scroll, no hidden overflow */
   .main-content {
     padding: 16px;
     gap: 16px;
+    overflow: visible;
   }
 
   /* Stats grid */
@@ -1184,20 +1189,30 @@ body {
     font-size: 0.7rem;
   }
 
-  /* Dashboard body: stack vertically, fill remaining space */
+  /* Dashboard body: natural flow, no forced sizing */
   .dashboard-body {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex-grow: 0;
+    min-height: auto;
+    max-height: none;
+    overflow: visible;
   }
 
-  /* Map: fill remaining viewport space */
+  /* Map: fixed height, no flex tricks */
   .map-container {
     padding: 14px;
     max-height: none;
+    overflow: visible;
+    min-height: auto;
   }
 
   .map-canvas-area {
-    min-height: 220px;
-    max-height: 40vh;
+    flex: none;
+    height: 260px;
+    min-height: 260px;
+    max-height: 260px;
   }
 
   .map-header {
@@ -1209,8 +1224,11 @@ body {
     display: none;
   }
 
+  /* Vehicle panel: natural flow */
   .vehicle-panel {
     max-height: none;
+    overflow: visible;
+    min-height: auto;
   }
 
   .vehicle-list {
@@ -1330,8 +1348,9 @@ body {
   }
 
   .map-canvas-area {
-    min-height: 180px;
-    max-height: 35vh;
+    height: 220px;
+    min-height: 220px;
+    max-height: 220px;
   }
 
   .vehicle-list {
