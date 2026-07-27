@@ -33,8 +33,9 @@ body {
   background-color: var(--bg-main);
   color: var(--text-main);
   font-family: var(--font-family-body);
-  overflow-x: hidden;
+  overflow: hidden;
   height: 100vh;
+  width: 100%;
 }
 
 /* Custom Scrollbar */
@@ -78,7 +79,8 @@ body {
   grid-template-rows: 70px 1fr;
   grid-template-columns: 240px 1fr;
   height: 100vh;
-  width: 100vw;
+  width: 100%;
+  overflow: hidden;
 }
 
 /* Header/Navbar */
@@ -209,6 +211,8 @@ body {
   flex-direction: column;
   gap: 24px;
   overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
 }
 
 /* Stats Cards Grid */
@@ -260,7 +264,9 @@ body {
   grid-template-columns: 2fr 1fr;
   gap: 24px;
   flex-grow: 1;
-  min-height: 480px;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
 }
 
 /* Map Display Container */
@@ -269,7 +275,10 @@ body {
   flex-direction: column;
   padding: 20px;
   position: relative;
-  max-height: 600px;
+  max-height: 100%;
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
 }
 
 .map-header {
@@ -280,13 +289,13 @@ body {
 }
 
 .map-canvas-area {
-  flex-grow: 1;
+  flex: 1 1 auto;
   border-radius: 8px;
   background: radial-gradient(circle at center, #111827 0%, #030712 100%);
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  min-height: 380px;
+  min-height: 200px;
 }
 
 /* Vehicle List Panel */
@@ -294,7 +303,10 @@ body {
   display: flex;
   flex-direction: column;
   padding: 20px;
-  max-height: 600px;
+  max-height: 100%;
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
 }
 
 .panel-title {
@@ -575,6 +587,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
 }
 
 .page-header {
@@ -1052,19 +1065,6 @@ body {
 
   .dashboard-body {
     grid-template-columns: 1fr;
-    min-height: auto;
-  }
-
-  .map-container {
-    max-height: 450px;
-  }
-
-  .map-canvas-area {
-    min-height: 300px;
-  }
-
-  .vehicle-panel {
-    max-height: none;
   }
 
   .settings-grid,
@@ -1184,25 +1184,37 @@ body {
     font-size: 0.7rem;
   }
 
-  /* Dashboard body: stack, remove min-height */
+  /* Dashboard body: stack vertically, fill remaining space */
   .dashboard-body {
     grid-template-columns: 1fr;
-    min-height: auto;
   }
 
-  /* Map fixes for mobile */
+  /* Map: fill remaining viewport space */
   .map-container {
-    max-height: none;
     padding: 14px;
+    max-height: none;
   }
 
   .map-canvas-area {
     min-height: 220px;
-    max-height: 50vh;
+    max-height: 40vh;
+  }
+
+  .map-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .map-header > div {
+    display: none;
   }
 
   .vehicle-panel {
     max-height: none;
+  }
+
+  .vehicle-list {
+    max-height: 250px;
   }
 
   /* Vehicle grid */
@@ -1227,6 +1239,7 @@ body {
   /* Filters bar */
   .filters-bar {
     gap: 6px;
+    flex-wrap: wrap;
   }
 
   .filter-chip {
@@ -1252,8 +1265,13 @@ body {
   }
 
   /* Tables */
+  .page-container {
+    overflow-x: auto;
+  }
+
   .page-container table {
     font-size: 0.75rem;
+    min-width: 500px;
   }
 
   .page-container table th,
@@ -1266,6 +1284,11 @@ body {
     right: 12px !important;
     left: 12px;
     max-width: none !important;
+  }
+
+  /* Breach notifications - smaller on mobile */
+  .geofence-breach-notifications {
+    max-width: 100vw;
   }
 }
 
@@ -1304,5 +1327,14 @@ body {
 
   .page-container > h3 {
     font-size: 0.95rem !important;
+  }
+
+  .map-canvas-area {
+    min-height: 180px;
+    max-height: 35vh;
+  }
+
+  .vehicle-list {
+    max-height: 200px;
   }
 }

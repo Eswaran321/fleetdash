@@ -75,8 +75,9 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
     let pulseGrowing = true;
 
     const drawMap = () => {
-      const width = canvas.width = canvas.parentElement?.clientWidth || 600;
-      const height = canvas.height = canvas.parentElement?.clientHeight || 380;
+      const area = canvas.parentElement?.getBoundingClientRect();
+      const width = canvas.width = Math.floor(area?.width || 600);
+      const height = canvas.height = Math.floor(area?.height || 380);
       const light = isLightTheme();
 
       const bgColor = light ? '#f8fafc' : '#060913';
