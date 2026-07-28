@@ -1164,11 +1164,12 @@ body {
     z-index: 99;
   }
 
-  /* Main content: allow scroll, no hidden overflow */
+  /* Main content: scrollable container */
   .main-content {
     padding: 16px;
     gap: 16px;
-    overflow: visible;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   /* Stats grid */
