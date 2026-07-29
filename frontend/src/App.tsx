@@ -18,7 +18,7 @@ import GeofencesPage from './pages/GeofencesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (typeof window !== 'undefined' ? `http://${window.location.hostname}:5000` : 'http://localhost:5000');
 
 const defaultGeofenceZones: GeofenceZone[] = [
   { geofenceId: 'zone-depot', name: 'Central Depot', type: 'circle', center: { lat: 12.9716, lng: 77.5946 }, radius: 1.5, status: 'active' },
