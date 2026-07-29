@@ -1,6 +1,20 @@
-import React, { useState } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { Search, Truck, Car, Bike, ShieldAlert } from 'lucide-react';
 import { Vehicle } from '../types';
+
+function getVehicleIcon(type: string): ReactNode {
+  switch (type) {
+    case 'truck':
+      return <Truck size={18} />;
+    case 'van':
+      return <Truck size={18} style={{ transform: 'scaleX(-1)' }} />;
+    case 'motorcycle':
+      return <Bike size={18} />;
+    case 'car':
+    default:
+      return <Car size={18} />;
+  }
+}
 
 interface VehicleListPanelProps {
   vehicles: Vehicle[];
@@ -15,7 +29,6 @@ export const VehicleListPanel: React.FC<VehicleListPanelProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter vehicles based on search criteria (name, plate number, or id)
   const filteredVehicles = vehicles.filter((vehicle) => {
     const term = searchTerm.toLowerCase();
     return (
@@ -24,21 +37,6 @@ export const VehicleListPanel: React.FC<VehicleListPanelProps> = ({
       vehicle.licensePlate.toLowerCase().includes(term)
     );
   });
-
-  // Get appropriate category icon
-  const getVehicleIcon = (type: string) => {
-    switch (type) {
-      case 'truck':
-        return <Truck size={18} />;
-      case 'van':
-        return <Truck size={18} style={{ transform: 'scaleX(-1)' }} />; // Simple variation
-      case 'motorcycle':
-        return <Bike size={18} />;
-      case 'car':
-      default:
-        return <Car size={18} />;
-    }
-  };
 
   return (
     <div className="glass-panel vehicle-panel">

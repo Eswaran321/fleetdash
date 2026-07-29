@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import telemetryRoutes from './routes/telemetryRoutes';
 import vehicleRoutes from './routes/vehicleRoutes';
+import geofenceRoutes from './routes/geofenceRoutes';
+import analyticsRoutes from './routes/analyticsRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 // Load environment variables.
@@ -29,6 +31,8 @@ app.get('/health', (req, res) => {
 // Bind API route namespaces.
 app.use('/telemetry', telemetryRoutes);
 app.use('/vehicles', vehicleRoutes);
+app.use('/geofences', geofenceRoutes);
+app.use('/analytics', analyticsRoutes);
 
 // Catch-all route for unhandled resources.
 app.use((req, res, next) => {

@@ -76,4 +76,7 @@ const TelemetryBucketSchema = new Schema(
 // Compound index for querying specific vehicle telemetry history over time windows.
 TelemetryBucketSchema.index({ vehicleId: 1, bucketStart: -1 });
 
+// TTL index to automatically remove buckets older than 72 hours.
+TelemetryBucketSchema.index({ bucketStart: 1 }, { expireAfterSeconds: 259200 });
+
 export default mongoose.model<ITelemetryBucket>('TelemetryBucket', TelemetryBucketSchema);

@@ -1,6 +1,6 @@
-# FleetDash 🚛⚡
+# FleetDash — Real-Time Fleet Telemetry Platform 🚛⚡
 
-**FleetDash** is a production-ready, full-stack real-time vehicle fleet telemetry ingestion, analysis, and visualization platform. Built with Express, TypeScript, React, Vite, Socket.io, and MongoDB, FleetDash processes live GPS and sensor telemetry using worker threads and high-performance database patterns.
+**FleetDash** is a high-throughput, full-stack real-time vehicle fleet telemetry ingestion, analysis, and visualization platform. Built with Express, TypeScript, React, Vite, Socket.io, and MongoDB, FleetDash processes live GPS and sensor telemetry using worker threads and high-performance database patterns.
 
 ---
 
@@ -57,10 +57,14 @@ flowchart TD
 
 ## 🛠️ Technology Stack
 
-- **Backend**: Node.js, Express, TypeScript, Socket.io, Mongoose, Worker Threads, Winston Logging, Jest, Supertest.
-- **Database**: MongoDB (Supports local MongoDB or Zero-Setup In-Memory MongoDB Server).
-- **Frontend**: React 18, TypeScript, Vite, Lucide Icons, HTML5 Canvas API.
-- **Simulation**: Node.js HTTP Telemetry Generator.
+| Layer | Technology |
+|---|---|
+| **Backend** | Node.js, Express, TypeScript |
+| **Database** | MongoDB (Bucket Pattern — hourly arrays per vehicle, supports zero-setup In-Memory Mongo) |
+| **Worker Threads** | CPU-bound coordinate parsing + Haversine distance calculations |
+| **Real-time Stream** | Socket.io WebSockets |
+| **Frontend** | React 18, TypeScript, Vite, HTML5 Canvas API (requestAnimationFrame) |
+| **Testing** | Jest, Supertest |
 
 ---
 
@@ -70,36 +74,41 @@ flowchart TD
 Install dependencies across workspace:
 
 ```bash
-# Backend dependencies
+# Install backend dependencies
 cd backend && npm install
 
-# Frontend dependencies
+# Install frontend dependencies
 cd ../frontend && npm install
 ```
 
-### 2. Launch Backend Server
-Starts Express API and Socket.io server on port `5000`:
+### 2. Launch Services
 
-```bash
-cd backend
-npm run dev
-```
+- **Root Concurrent Launcher**:
+  ```bash
+  npm run dev:backend
+  npm run dev:frontend
+  npm run simulate
+  ```
 
-### 3. Launch Telemetry Simulator
-In a separate terminal, start simulated fleet data generation:
+- **Backend Service (Port 5000)**:
+  ```bash
+  cd backend
+  npm run dev
+  ```
 
-```bash
-cd backend
-npm run simulate
-```
+- **Simulator (Separate Terminal)**:
+  ```bash
+  cd backend
+  npm run simulate
+  ```
 
-### 4. Launch Frontend Dashboard
-In another terminal, start Vite development server on `http://localhost:5173`:
+- **Frontend Client (Port 5173)**:
+  ```bash
+  cd frontend
+  npm run dev
+  ```
 
-```bash
-cd frontend
-npm run dev
-```
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
@@ -134,7 +143,7 @@ npm test
 
 ### Vehicles API
 - `GET /vehicles` - Get list of all vehicles with cached status and latest coordinates.
-- `GET /vehicles/:vehicleId/telemetry` - Retrieve flattened chronological telemetry history for a vehicle (Query param: `hours`, default `24`).
+- `GET /vehicles/:vehicleId` - Retrieve flattened chronological telemetry history for a vehicle (Query param: `hours`, default `24`).
 
 ---
 

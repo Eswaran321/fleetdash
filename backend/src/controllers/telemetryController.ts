@@ -2,12 +2,16 @@ import { Request, Response, NextFunction } from 'express';
 import TelemetryBucket from '../models/TelemetryBucket';
 import Vehicle from '../models/Vehicle';
 import { runCoordinateParserWorker } from '../workers/workerPool';
+import { publisher, isAvailable as redisAvailable, TELEMETRY_CHANNEL, TELEMETRY_GLOBAL_CHANNEL } from '../config/redis';
+import { BREACH_ALERT_CHANNEL } from '../types/breachAlert';
+import { encodeVehicleTelemetry, encodeGlobalTelemetry } from '../utils/binaryProtocol';
+import { geofenceService } from '../services/geofenceService';
 import logger from '../utils/logger';
 
 /**
  * Ingests a new telemetry ping for a vehicle.
  * Coordinates are parsed in a worker thread, stored using the Bucket Pattern,
- * cached on the Vehicle record, and broadcasted via WebSockets.
+ * cached on the Vehicle record, and broadcasted via Redis Pub/Sub → Socket.io.
  */
 export const ingestTelemetry = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -31,7 +35,7 @@ export const ingestTelemetry = async (req: Request, res: Response, next: NextFun
     bucketStart.setMinutes(0, 0, 0);
 
     // 3. Upsert telemetry record in the hourly Bucket document
-    const updatedBucket = await TelemetryBucket.findOneAndUpdate(
+    await TelemetryBucket.findOneAndUpdate(
       { vehicleId, bucketStart },
       {
         $push: {
@@ -50,7 +54,7 @@ export const ingestTelemetry = async (req: Request, res: Response, next: NextFun
     );
 
     // 4. Update the vehicle status and cache the latest location coordinates
-    const updatedVehicle = await Vehicle.findOneAndUpdate(
+    await Vehicle.findOneAndUpdate(
       { vehicleId },
       {
         $set: {
@@ -68,30 +72,65 @@ export const ingestTelemetry = async (req: Request, res: Response, next: NextFun
       { upsert: true, new: true }
     );
 
-    // 5. Emit live telemetry data point via WebSockets for real-time tracking
-    const io = req.app.get('io');
-    if (io) {
-      io.emit(`telemetry:${vehicleId}`, {
-        vehicleId,
-        timestamp: pingTime,
-        lat,
-        lng,
-        speed: Number(speed),
-        fuel: Number(fuel),
-        engineTemp: Number(engineTemp),
-        distanceFromDepot,
+    // 5. Broadcast telemetry — via Redis Pub/Sub if available, else direct Socket.io
+    const vehiclePayload = {
+      vehicleId,
+      timestamp: pingTime,
+      lat,
+      lng,
+      speed: Number(speed),
+      fuel: Number(fuel),
+      engineTemp: Number(engineTemp),
+      distanceFromDepot,
+    };
+
+    if (redisAvailable && publisher) {
+      publisher.publish(TELEMETRY_CHANNEL, JSON.stringify(vehiclePayload)).catch((err) => {
+        logger.warn(`Redis publish failed on ${TELEMETRY_CHANNEL}: ${err.message}`);
       });
-      // Broadcast globally to update lists
-      io.emit('telemetry_global', {
-        vehicleId,
-        timestamp: pingTime,
-        lat,
-        lng,
-        speed: Number(speed),
-        fuel: Number(fuel),
-        engineTemp: Number(engineTemp),
-        status: 'active',
+      publisher.publish(TELEMETRY_GLOBAL_CHANNEL, JSON.stringify({ ...vehiclePayload, status: 'active' })).catch((err) => {
+        logger.warn(`Redis publish failed on ${TELEMETRY_GLOBAL_CHANNEL}: ${err.message}`);
       });
+    } else {
+      const io = req.app.get('io');
+      if (io) {
+        io.emit(`telemetry:${vehicleId}`, encodeVehicleTelemetry({
+          timestamp: pingTime,
+          lat,
+          lng,
+          speed: Number(speed),
+          fuel: Number(fuel),
+          engineTemp: Number(engineTemp),
+          distanceFromDepot,
+        }));
+        io.emit('telemetry_global', encodeGlobalTelemetry({
+          vehicleId,
+          timestamp: pingTime,
+          lat,
+          lng,
+          speed: Number(speed),
+          fuel: Number(fuel),
+          engineTemp: Number(engineTemp),
+          distanceFromDepot,
+          status: 'active',
+        }));
+      }
+    }
+
+    // 6. Run geofence boundary checks and broadcast any breach alerts
+    const alerts = geofenceService.checkPoint(vehicleId, lat, lng, Number(speed));
+    for (const alert of alerts) {
+      if (redisAvailable && publisher) {
+        publisher.publish(BREACH_ALERT_CHANNEL, JSON.stringify(alert)).catch((err) => {
+          logger.warn(`Redis publish failed on ${BREACH_ALERT_CHANNEL}: ${err.message}`);
+        });
+      } else {
+        const io = req.app.get('io');
+        if (io) {
+          io.emit(BREACH_ALERT_CHANNEL, alert);
+        }
+      }
+      logger.warn(`Geofence breach: ${alert.description}`);
     }
 
     logger.debug(`Ingested telemetry for vehicle ${vehicleId}. Distance from depot: ${distanceFromDepot.toFixed(2)} km`);
