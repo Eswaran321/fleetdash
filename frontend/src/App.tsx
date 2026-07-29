@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import StatsCard from './components/StatsCard';
 import MapPlaceholder from './components/MapPlaceholder';
 import VehicleListPanel from './components/VehicleListPanel';
+import TelemetryChart from './components/TelemetryChart';
 import Loading from './components/Loading';
 import ErrorAlert from './components/ErrorAlert';
 import { apiService } from './services/api';
@@ -223,6 +224,14 @@ export const App: React.FC = () => {
             vehicles={vehicles} 
             selectedVehicleId={selectedVehicleId} 
             onSelectVehicle={setSelectedVehicleId} 
+          />
+        </section>
+
+        {/* Real-Time Telemetry Analytics Chart */}
+        <section style={{ marginTop: '16px' }}>
+          <TelemetryChart 
+            selectedVehicle={selectedVehicle} 
+            telemetryHistory={telemetryHistory} 
           />
         </section>
       </main>
