@@ -152,24 +152,24 @@ export const VehiclesPage: React.FC = () => {
               Telemetry History (last {history.length} pings)
             </h3>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+              <table>
                 <thead>
-                  <tr style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                    <th style={{ padding: '8px 12px' }}>Time</th>
-                    <th style={{ padding: '8px 12px' }}>Speed</th>
-                    <th style={{ padding: '8px 12px' }}>Fuel</th>
-                    <th style={{ padding: '8px 12px' }}>Engine Temp</th>
-                    <th style={{ padding: '8px 12px' }}>Position</th>
+                  <tr>
+                    <th>Time</th>
+                    <th>Speed</th>
+                    <th>Fuel</th>
+                    <th>Engine Temp</th>
+                    <th>Position</th>
                   </tr>
                 </thead>
                 <tbody>
                   {history.slice().reverse().slice(0, 20).map((p, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', color: 'var(--text-secondary)' }}>
-                      <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>{new Date(p.timestamp).toLocaleTimeString()}</td>
-                      <td style={{ padding: '8px 12px' }}>{p.speed} km/h</td>
-                      <td style={{ padding: '8px 12px' }}>{p.fuel}%</td>
-                      <td style={{ padding: '8px 12px' }}>{p.engineTemp}°C</td>
-                      <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: '0.75rem' }}>{p.lat.toFixed(4)}, {p.lng.toFixed(4)}</td>
+                    <tr key={i}>
+                      <td style={{ fontFamily: 'monospace' }}>{new Date(p.timestamp).toLocaleTimeString()}</td>
+                      <td>{p.speed} km/h</td>
+                      <td>{p.fuel}%</td>
+                      <td>{p.engineTemp}°C</td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{p.lat.toFixed(4)}, {p.lng.toFixed(4)}</td>
                     </tr>
                   ))}
                 </tbody>
