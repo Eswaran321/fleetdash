@@ -122,32 +122,30 @@ export const GeofencesPage: React.FC<Props> = ({ zones, breachHistory }) => {
 
         {zoneBreaches.length > 0 ? (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+            <table>
               <thead>
-                <tr style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                  <th style={{ padding: '8px 12px' }}>Time</th>
-                  <th style={{ padding: '8px 12px' }}>Vehicle</th>
-                  <th style={{ padding: '8px 12px' }}>Type</th>
-                  <th style={{ padding: '8px 12px' }}>Severity</th>
-                  <th style={{ padding: '8px 12px' }}>Speed</th>
-                  <th style={{ padding: '8px 12px' }}>Position</th>
+                <tr>
+                  <th>Time</th>
+                  <th>Vehicle</th>
+                  <th>Type</th>
+                  <th>Severity</th>
+                  <th>Speed</th>
+                  <th>Position</th>
                 </tr>
               </thead>
               <tbody>
                 {zoneBreaches.map((b) => (
-                  <tr key={b.alertId} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', color: 'var(--text-secondary)' }}>
-                    <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>{new Date(b.timestamp).toLocaleString()}</td>
-                    <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-main)' }}>{b.vehicleId}</td>
-                    <td style={{ padding: '8px 12px' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', background: b.breachType === 'entry' ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)', color: b.breachType === 'entry' ? '#10b981' : '#f59e0b' }}>
+                  <tr key={b.alertId}>
+                    <td style={{ fontFamily: 'monospace' }}>{new Date(b.timestamp).toLocaleString()}</td>
+                    <td style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-main)' }}>{b.vehicleId}</td>
+                    <td>
+                      <span className={`breach-badge ${b.breachType}`}>
                         {breachTypeIcon(b.breachType)} {b.breachType}
                       </span>
                     </td>
-                    <td style={{ padding: '8px 12px' }}>
-                      <span style={{ color: severityColor(b.severity), fontWeight: 600, textTransform: 'capitalize' }}>{b.severity}</span>
-                    </td>
-                    <td style={{ padding: '8px 12px' }}>{b.vehicleSpeed} km/h</td>
-                    <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: '0.75rem' }}>{b.vehicleLat.toFixed(4)}, {b.vehicleLng.toFixed(4)}</td>
+                    <td><span style={{ color: severityColor(b.severity), fontWeight: 600, textTransform: 'capitalize' }}>{b.severity}</span></td>
+                    <td>{b.vehicleSpeed} km/h</td>
+                    <td style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{b.vehicleLat.toFixed(4)}, {b.vehicleLng.toFixed(4)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -240,30 +238,28 @@ export const GeofencesPage: React.FC<Props> = ({ zones, breachHistory }) => {
         <>
           <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1.1rem', fontWeight: 600, marginTop: '10px' }}>Recent Breach Activity</h3>
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+            <table>
               <thead>
-                <tr style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                  <th style={{ padding: '8px 12px' }}>Time</th>
-                  <th style={{ padding: '8px 12px' }}>Vehicle</th>
-                  <th style={{ padding: '8px 12px' }}>Zone</th>
-                  <th style={{ padding: '8px 12px' }}>Type</th>
-                  <th style={{ padding: '8px 12px' }}>Severity</th>
-                  <th style={{ padding: '8px 12px' }}>Description</th>
+                <tr>
+                  <th>Time</th>
+                  <th>Vehicle</th>
+                  <th>Zone</th>
+                  <th>Type</th>
+                  <th>Severity</th>
+                  <th>Description</th>
                 </tr>
               </thead>
               <tbody>
                 {breachHistory.slice(0, 20).map((b) => (
-                  <tr key={b.alertId} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', color: 'var(--text-secondary)' }}>
-                    <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>{new Date(b.timestamp).toLocaleTimeString()}</td>
-                    <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-main)' }}>{b.vehicleId}</td>
-                    <td style={{ padding: '8px 12px' }}>{b.geofenceName}</td>
-                    <td style={{ padding: '8px 12px' }}>
-                      <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', background: b.breachType === 'entry' ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)', color: b.breachType === 'entry' ? '#10b981' : '#f59e0b' }}>
-                        {b.breachType}
-                      </span>
+                  <tr key={b.alertId}>
+                    <td style={{ fontFamily: 'monospace' }}>{new Date(b.timestamp).toLocaleTimeString()}</td>
+                    <td style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-main)' }}>{b.vehicleId}</td>
+                    <td>{b.geofenceName}</td>
+                    <td>
+                      <span className={`breach-badge ${b.breachType}`}>{b.breachType}</span>
                     </td>
-                    <td style={{ padding: '8px 12px', color: severityColor(b.severity), fontWeight: 600, textTransform: 'capitalize' }}>{b.severity}</td>
-                    <td style={{ padding: '8px 12px', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.description}</td>
+                    <td style={{ color: severityColor(b.severity), fontWeight: 600, textTransform: 'capitalize' }}>{b.severity}</td>
+                    <td style={{ maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.description}</td>
                   </tr>
                 ))}
               </tbody>
