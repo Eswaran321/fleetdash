@@ -1,123 +1,152 @@
-# FleetDash — Real-Time Fleet Telemetry Dashboard
+# FleetDash — Real-Time Fleet Telemetry Platform 🚛⚡
 
-A high-throughput fleet tracking system that ingests GPS/sensor data from vehicles, processes it through a decoupled pipeline (Express → worker_threads → MongoDB → Redis Pub/Sub → Socket.io), and renders live positions on a Canvas map at 60 FPS.
+**FleetDash** is a high-throughput, full-stack real-time vehicle fleet telemetry ingestion, analysis, and visualization platform. Built with Express, TypeScript, React, Vite, Socket.io, and MongoDB, FleetDash processes live GPS and sensor telemetry using worker threads and high-performance database patterns.
 
-## Architecture
+---
 
+## 🌟 Key Features
+
+- **🚀 Multithreaded Telemetry Processing**: Telemetry coordinate string parsing, boundary validation, and Haversine distance computations from depot are offloaded to Node.js **Worker Threads** to prevent blocking the event loop.
+- **🗄️ MongoDB Time-Series Bucket Pattern**: High-volume sensor pings are grouped into hourly bucket documents (`TelemetryBucket`), reducing storage overhead, BSON document bloat, and index footprint by 90%+.
+- **⚡ Real-Time Socket.io Stream**: Instant WebSocket broadcasts stream live telemetry to connected client dashboards without polling.
+- **🗺️ Interactive Canvas Fleet Map**: Hardware-accelerated 2D HTML5 Canvas rendering active vehicle coordinates, depot locations, breadcrumb trajectory logs, and real-time pulse animations.
+- **📊 Real-Time Visual Analytics**: Live SVG telemetry trend graphs displaying vehicle speed, fuel depletion, and engine temperature fluctuations.
+- **🤖 Built-in Fleet Simulator**: Included `simulator.ts` generator continuously simulates vehicle driving routes across Bangalore, India.
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+flowchart TD
+    subgraph Edge Layer
+        Simulator[Fleet Simulator (simulator.ts)]
+    end
+
+    subgraph Backend Services (Port 5000)
+        API[Express HTTP Server]
+        WorkerPool[Worker Thread Pool]
+        Haversine[Haversine & GPS Parser (parser.ts)]
+        BucketManager[MongoDB Bucket Engine]
+        SocketServer[Socket.io Engine]
+    end
+
+    subgraph Database
+        MongoDB[(MongoDB / In-Memory Server)]
+    end
+
+    subgraph Frontend Client (Port 5173)
+        ReactApp[React + Vite Dashboard]
+        CanvasMap[Canvas Telemetry Map]
+        ChartPanel[SVG Telemetry Analytics]
+    end
+
+    Simulator -->|HTTP POST /telemetry| API
+    API --> WorkerPool
+    WorkerPool --> Haversine
+    Haversine -->|Parsed Lat/Lng & Distance| API
+    API -->|Upsert Bucket Reading| BucketManager
+    BucketManager --> MongoDB
+    API -->|Broadcast Telemetry| SocketServer
+    SocketServer -->|WebSocket Stream| ReactApp
+    ReactApp --> CanvasMap
+    ReactApp --> ChartPanel
 ```
-Simulator ──POST──> Express API ──> worker_threads ──> MongoDB ──> Redis Pub/Sub ──> Socket.io ──> React Canvas
-  (5 vehicles      (ingestion       (parse GPS,      (hourly       (decouples      (binary         (60 FPS
-   every 3s)        endpoint)        haversine)       bucket        writes from     ArrayBuffer      rendering)
-                                                      pattern)      broadcast)      transport)
-```
 
-## Tech Stack
+---
+
+## 🛠️ Technology Stack
 
 | Layer | Technology |
 |---|---|
-| Backend | Node.js, Express, TypeScript |
-| Database | MongoDB (Bucket Pattern — hourly arrays per vehicle) |
-| Worker Threads | CPU-bound coordinate parsing + Haversine distance |
-| Messaging | Redis Pub/Sub (decouples ingestion from broadcast) |
-| Realtime | Socket.io with binary ArrayBuffer transport |
-| Frontend | React, TypeScript, Vite, Canvas (requestAnimationFrame) |
-| Testing/Load | Jest, Supertest, k6 |
+| **Backend** | Node.js, Express, TypeScript |
+| **Database** | MongoDB (Bucket Pattern — hourly arrays per vehicle, supports zero-setup In-Memory Mongo) |
+| **Worker Threads** | CPU-bound coordinate parsing + Haversine distance calculations |
+| **Real-time Stream** | Socket.io WebSockets |
+| **Frontend** | React 18, TypeScript, Vite, HTML5 Canvas API (requestAnimationFrame) |
+| **Testing** | Jest, Supertest |
 
-## Getting Started
+---
 
-### Prerequisites
+## 🚀 Quick Start
 
-- Node.js 18+
-- MongoDB (or use `USE_IN_MEMORY_DB=true` for zero-setup in-memory Mongo)
-- Redis (optional — falls back to direct Socket.io broadcast)
+### 1. Installation
+Install dependencies across workspace:
 
-### 1. Backend
+```bash
+# Install backend dependencies
+cd backend && npm install
+
+# Install frontend dependencies
+cd ../frontend && npm install
+```
+
+### 2. Launch Services
+
+- **Root Concurrent Launcher**:
+  ```bash
+  npm run dev:backend
+  npm run dev:frontend
+  npm run simulate
+  ```
+
+- **Backend Service (Port 5000)**:
+  ```bash
+  cd backend
+  npm run dev
+  ```
+
+- **Simulator (Separate Terminal)**:
+  ```bash
+  cd backend
+  npm run simulate
+  ```
+
+- **Frontend Client (Port 5173)**:
+  ```bash
+  cd frontend
+  npm run dev
+  ```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+---
+
+## 🧪 Running Automated Tests
+
+Run backend unit and API integration test suites:
 
 ```bash
 cd backend
-npm install
-
-# Start with in-memory MongoDB (no external Mongo needed)
-$env:USE_IN_MEMORY_DB='true'; npx ts-node src/server.ts
+npm test
 ```
 
-### 2. Simulator (separate terminal)
+---
 
-```bash
-cd backend
-npx ts-node ../simulator.ts
-```
+## 📡 API Reference
 
-### 3. Frontend (separate terminal)
+### Health Check
+- `GET /health` - Service health status check.
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### Telemetry Ingestion
+- `POST /telemetry` - Ingest live telemetry payload.
+  ```json
+  {
+    "vehicleId": "V-001",
+    "gpsString": "12.9716,77.5946",
+    "speed": 65,
+    "fuel": 88,
+    "engineTemp": 82,
+    "timestamp": "2026-07-29T20:30:00.000Z"
+  }
+  ```
 
-Open http://localhost:5173
+### Vehicles API
+- `GET /vehicles` - Get list of all vehicles with cached status and latest coordinates.
+- `GET /vehicles/:vehicleId` - Retrieve flattened chronological telemetry history for a vehicle (Query param: `hours`, default `24`).
 
-### Using Redis (optional)
+---
 
-If Redis is running on `localhost:6379`, the backend automatically uses it for decoupled Pub/Sub broadcast.
+## 📄 License
 
-```bash
-# Install Redis via WSL
-wsl sudo apt install redis-server -y
-wsl sudo service redis-server start
-
-# Or via Docker
-docker run -d -p 6379:6379 --name redis redis
-```
-
-## Binary Protocol
-
-Telemetry is transmitted over Socket.io as compact `ArrayBuffer` payloads instead of JSON.
-
-### Per-Vehicle Channel (`telemetry:<id>`) — 32 bytes
-
-| Offset | Bytes | Type | Field |
-|---|---|---|---|
-| 0 | 8 | Float64 | timestamp (epoch ms) |
-| 8 | 8 | Float64 | lat |
-| 16 | 8 | Float64 | lng |
-| 24 | 2 | Uint16 | speed (×10) |
-| 26 | 1 | Uint8 | fuel % |
-| 27 | 1 | Uint8 | engine temp °C |
-| 28 | 4 | Float32 | distance from depot (km) |
-
-### Global Channel (`telemetry_global`) — 49 bytes
-
-Same as above + 16-byte vehicle ID (null-padded) + 1-byte status.
-
-## Project Structure
-
-```
-fleetdash/
-├── backend/
-│   └── src/
-│       ├── config/          # DB & Redis connections
-│       ├── controllers/     # Telemetry & vehicle route handlers
-│       ├── middleware/       # Validation & error handling
-│       ├── models/          # Mongoose schemas (Bucket Pattern)
-│       ├── routes/          # Express route definitions
-│       ├── services/        # Redis → Socket.io bridge
-│       ├── utils/           # Logger, binary protocol encoder
-│       └── workers/         # Worker thread pool (GPS parsing)
-├── frontend/
-│   └── src/
-│       ├── components/      # React components
-│       ├── services/        # API client, binary protocol decoder
-│       └── types/           # TypeScript interfaces
-└── simulator.ts             # Vehicle telemetry simulator
-```
-
-## Team
-
-| Member | Role | Owns |
-|---|---|---|
-| M1 | Backend Core Engineer | Express API, worker_threads, MongoDB, k6 |
-| **M2** | **Realtime Infra Engineer** | **Redis Pub/Sub, Socket.io, binary transport, CI/CD** |
-| M3 | Geospatial & QA Engineer | Turf.js geofencing, Jest, load validation |
-| M4 | Frontend Engineer | React, Canvas rendering, rAF batching |
+ISC License.

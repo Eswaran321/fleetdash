@@ -22,31 +22,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
         </div>
         <ul className="sidebar-menu">
           <li onClick={handleNavClick}>
-            <NavLink to="/" end className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}>
+            <NavLink to="/" end className={({ isActive }: { isActive: boolean }) => `sidebar-item${isActive ? ' active' : ''}`}>
               <LayoutDashboard size={18} />
               <span>Dashboard</span>
             </NavLink>
           </li>
           <li onClick={handleNavClick}>
-            <NavLink to="/vehicles" className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}>
+            <NavLink to="/vehicles" className={({ isActive }: { isActive: boolean }) => `sidebar-item${isActive ? ' active' : ''}`}>
               <Truck size={18} />
               <span>Vehicles</span>
             </NavLink>
           </li>
           <li onClick={handleNavClick}>
-            <NavLink to="/geofences" className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}>
+            <NavLink to="/geofences" className={({ isActive }: { isActive: boolean }) => `sidebar-item${isActive ? ' active' : ''}`}>
               <Compass size={18} />
               <span>Geofences</span>
             </NavLink>
           </li>
           <li onClick={handleNavClick}>
-            <NavLink to="/analytics" className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}>
+            <NavLink to="/analytics" className={({ isActive }: { isActive: boolean }) => `sidebar-item${isActive ? ' active' : ''}`}>
               <BarChart3 size={18} />
               <span>Analytics</span>
             </NavLink>
           </li>
           <li onClick={handleNavClick}>
-            <NavLink to="/settings" className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}>
+            <NavLink to="/settings" className={({ isActive }: { isActive: boolean }) => `sidebar-item${isActive ? ' active' : ''}`}>
               <Settings size={18} />
               <span>Settings</span>
             </NavLink>
