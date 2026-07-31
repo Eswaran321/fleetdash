@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "simulate": "ts-node ../simulator.ts",
     "seed": "ts-node src/seed.ts",
-    "test": "jest"
+    "test": "jest --runInBand",
+    "test:watch": "jest --runInBand --watch"
   },
   "dependencies": {
     "@turf/turf": "^7.3.5",
