@@ -42,3 +42,14 @@ mongoose.connection.on('disconnected', () => {
 mongoose.connection.on('error', (err) => {
   logger.error(`Mongoose connection error: ${err.message}`);
 });
+
+/**
+ * Gracefully disconnect from MongoDB and stop the in-memory server if it was booted.
+ */
+export const disconnectDB = async (): Promise<void> => {
+  await mongoose.disconnect();
+  if (mongoMemoryServer) {
+    await mongoMemoryServer.stop();
+    mongoMemoryServer = null;
+  }
+};
