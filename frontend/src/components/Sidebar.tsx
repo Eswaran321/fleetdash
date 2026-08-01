@@ -17,7 +17,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
       {isOpen && <div className="sidebar-overlay" onClick={onClose} />}
       <aside className={`sidebar${isOpen ? ' sidebar-open' : ''}`}>
         <div className="sidebar-mobile-header">
-          <span style={{ fontFamily: 'var(--font-family-heading)', fontWeight: 700, color: 'var(--primary-accent)' }}>Menu</span>
+          <span style={{ fontFamily: 'var(--font-family-heading)', fontWeight: 700, color: 'var(--primary)' }}>Menu</span>
           <button className="sidebar-close-btn" onClick={onClose}><X size={18} /></button>
         </div>
         <ul className="sidebar-menu">
@@ -54,7 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
         </ul>
 
         <div className="sidebar-info-box">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary-accent)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)' }}>
             <ShieldCheck size={16} />
             <span>Core Ingestion</span>
           </div>

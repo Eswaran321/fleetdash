@@ -22,8 +22,8 @@ export const StatsCard: React.FC<StatsCardProps> = ({ label, value, icon, accent
       <div 
         className="stat-icon-wrapper" 
         style={{ 
-          backgroundColor: accentColor ? `${accentColor}15` : 'rgba(56, 189, 248, 0.1)',
-          color: accentColor || 'var(--primary-accent)'
+          backgroundColor: accentColor ? `${accentColor}15` : 'rgba(37, 99, 235, 0.08)',
+          color: accentColor || 'var(--primary)'
         }}
       >
         {icon}

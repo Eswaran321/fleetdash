@@ -71,7 +71,7 @@ export const SettingsPage: React.FC = () => {
     <div className="page-container">
       <div className="page-header">
         <h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1.6rem', fontWeight: 700 }}>
-          <Settings size={22} style={{ verticalAlign: 'middle', marginRight: '10px', color: 'var(--primary-accent)' }} />
+          <Settings size={22} style={{ verticalAlign: 'middle', marginRight: '10px', color: 'var(--primary)' }} />
           Settings
         </h1>
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -90,7 +90,7 @@ export const SettingsPage: React.FC = () => {
         {/* Profile Section */}
         <div className="glass-panel settings-section">
           <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <User size={16} color="var(--primary-accent)" /> Profile
+            <User size={16} color="var(--primary)" /> Profile
           </h3>
           <div className="settings-field">
             <label className="settings-label">Full Name</label>
@@ -130,7 +130,7 @@ export const SettingsPage: React.FC = () => {
         {/* Appearance Section */}
         <div className="glass-panel settings-section">
           <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Monitor size={16} color="var(--primary-accent)" /> Appearance
+            <Monitor size={16} color="var(--primary)" /> Appearance
           </h3>
           <div className="settings-row">
             <div>
@@ -156,7 +156,7 @@ export const SettingsPage: React.FC = () => {
         {/* Notifications Section */}
         <div className="glass-panel settings-section">
           <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Bell size={16} color="var(--primary-accent)" /> Notifications
+            <Bell size={16} color="var(--primary)" /> Notifications
           </h3>
           <div className="settings-row">
             <div>
@@ -194,7 +194,7 @@ export const SettingsPage: React.FC = () => {
         {/* Data & Refresh Section */}
         <div className="glass-panel settings-section">
           <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Globe size={16} color="var(--primary-accent)" /> Data & Refresh
+            <Globe size={16} color="var(--primary)" /> Data & Refresh
           </h3>
           <div className="settings-row">
             <div>
@@ -223,7 +223,7 @@ export const SettingsPage: React.FC = () => {
       {/* System Info */}
       <div className="glass-panel settings-section" style={{ marginTop: '4px' }}>
         <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Cpu size={16} color="var(--primary-accent)" /> System Info
+          <Cpu size={16} color="var(--primary)" /> System Info
         </h3>
         <div className="system-info-grid">
           <div className="system-info-item">

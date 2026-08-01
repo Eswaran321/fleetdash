@@ -4,14 +4,14 @@ import { GeofenceZone, BreachAlert } from '../types';
 
 const severityColor = (s: string) => {
   switch (s) {
-    case 'critical': return '#ef4444';
-    case 'warning': return '#f59e0b';
-    default: return '#38bdf8';
+    case 'critical': return '#dc2626';
+    case 'warning': return '#d97706';
+    default: return '#2563eb';
   };
 };
 
 const breachTypeIcon = (type: string) => {
-  return type === 'entry' ? <MapPin size={14} color="#10b981" /> : <MapPin size={14} color="#f59e0b" />;
+  return type === 'entry' ? <MapPin size={14} color="#16a34a" /> : <MapPin size={14} color="#d97706" />;
 };
 
 interface Props {
@@ -40,7 +40,7 @@ export const GeofencesPage: React.FC<Props> = ({ zones, breachHistory }) => {
 
         <div className="detail-header">
           <div className="detail-title">
-            <Compass size={28} color="var(--primary-accent)" />
+            <Compass size={28} color="var(--primary)" />
             <div>
               <h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1.6rem', fontWeight: 700 }}>{zone.name}</h1>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{zone.geofenceId}</span>
@@ -83,7 +83,7 @@ export const GeofencesPage: React.FC<Props> = ({ zones, breachHistory }) => {
         {zone.type === 'circle' && zone.center && zone.radius !== undefined && (
           <div className="glass-panel" style={{ padding: '20px' }}>
             <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Compass size={16} color="var(--primary-accent)" /> Circle Boundaries
+              <Compass size={16} color="var(--primary)" /> Circle Boundaries
             </h3>
             <div style={{ display: 'flex', gap: '24px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
               <span>Center Lat: <strong style={{ color: 'var(--text-main)' }}>{zone.center.lat.toFixed(4)}</strong></span>
@@ -96,11 +96,11 @@ export const GeofencesPage: React.FC<Props> = ({ zones, breachHistory }) => {
         {zone.type === 'polygon' && zone.coordinates && (
           <div className="glass-panel" style={{ padding: '20px' }}>
             <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Compass size={16} color="var(--primary-accent)" /> Polygon Vertices
+              <Compass size={16} color="var(--primary)" /> Polygon Vertices
             </h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
               {zone.coordinates.map((c, i) => (
-                <span key={i} style={{ fontSize: '0.8rem', fontFamily: 'monospace', background: 'rgba(56,189,248,0.08)', padding: '4px 10px', borderRadius: '6px', color: 'var(--text-secondary)' }}>
+                <span key={i} style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)', background: 'rgba(37, 99, 235, 0.06)', padding: '4px 10px', borderRadius: '6px', color: 'var(--text-secondary)' }}>
                   ({c.lat.toFixed(4)}, {c.lng.toFixed(4)})
                 </span>
               ))}
@@ -166,7 +166,7 @@ export const GeofencesPage: React.FC<Props> = ({ zones, breachHistory }) => {
     <div className="page-container">
       <div className="page-header">
         <h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1.6rem', fontWeight: 700 }}>
-          <Compass size={22} style={{ verticalAlign: 'middle', marginRight: '10px', color: 'var(--primary-accent)' }} />
+          <Compass size={22} style={{ verticalAlign: 'middle', marginRight: '10px', color: 'var(--primary)' }} />
           Geofences
         </h1>
         <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{activeZones.length} active zones</span>

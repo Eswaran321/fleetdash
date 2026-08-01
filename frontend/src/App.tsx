@@ -74,20 +74,20 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
           {breachAlerts.map((alert) => (
             <div key={alert.alertId} className="glass-panel" style={{
               padding: '12px 16px',
-              borderLeft: `3px solid ${alert.severity === 'critical' ? '#ef4444' : alert.severity === 'warning' ? '#f59e0b' : '#38bdf8'}`,
+              borderLeft: `3px solid ${alert.severity === 'critical' ? '#dc2626' : alert.severity === 'warning' ? '#d97706' : '#2563eb'}`,
               fontSize: '0.8rem',
               animation: 'slideIn 0.3s ease',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <MapPin size={14} color={alert.breachType === 'entry' ? '#10b981' : '#f59e0b'} />
+                <MapPin size={14} color={alert.breachType === 'entry' ? '#16a34a' : '#d97706'} />
                 <strong style={{ color: 'var(--text-main)' }}>{alert.geofenceName}</strong>
                 <span style={{
                   marginLeft: 'auto',
                   fontSize: '0.7rem',
                   padding: '2px 6px',
                   borderRadius: '4px',
-                  background: alert.breachType === 'entry' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
-                  color: alert.breachType === 'entry' ? '#10b981' : '#f59e0b',
+                  background: alert.breachType === 'entry' ? 'rgba(22, 163, 74, 0.12)' : 'rgba(217, 119, 6, 0.12)',
+                  color: alert.breachType === 'entry' ? '#16a34a' : '#d97706',
                   fontWeight: 600,
                   textTransform: 'uppercase',
                 }}>{alert.breachType}</span>
@@ -99,10 +99,10 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
       )}
 
       <section className="stats-grid">
-        <StatsCard label="Total Fleet Vehicles" value={totalVehiclesCount} icon={<Truck size={22} />} accentColor="#818cf8" />
-        <StatsCard label="Vehicles Online" value={activeVehiclesCount} icon={<Zap size={22} />} accentColor="#10b981" />
-        <StatsCard label="Avg Speed (Active)" value={`${avgSpeed} km/h`} icon={<Gauge size={22} />} accentColor="#38bdf8" />
-        <StatsCard label="Telemetry Streams" value={telemetryHistory.length} icon={<Navigation size={22} />} accentColor="#f59e0b" />
+        <StatsCard label="Total Fleet Vehicles" value={totalVehiclesCount} icon={<Truck size={22} />} accentColor="#6366f1" />
+        <StatsCard label="Vehicles Online" value={activeVehiclesCount} icon={<Zap size={22} />} accentColor="#16a34a" />
+        <StatsCard label="Avg Speed (Active)" value={`${avgSpeed} km/h`} icon={<Gauge size={22} />} accentColor="#2563eb" />
+        <StatsCard label="Telemetry Streams" value={telemetryHistory.length} icon={<Navigation size={22} />} accentColor="#d97706" />
       </section>
 
       <section className="dashboard-body">
@@ -116,7 +116,7 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({
 // ---- 404 page ----
 const NotFound: React.FC = () => (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '16px' }}>
-    <h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '3rem', fontWeight: 800, color: 'var(--primary-accent)' }}>404</h1>
+    <h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '3rem', fontWeight: 800, color: 'var(--primary)' }}>404</h1>
     <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Page not found</p>
     <Link to="/" className="back-btn" style={{ textDecoration: 'none' }}>Back to Dashboard</Link>
   </div>

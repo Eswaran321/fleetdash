@@ -39,11 +39,11 @@ export const AnalyticsPage: React.FC<Props> = ({ vehicles, breachHistory, teleme
   // Speed distribution buckets
   const speedBuckets = useMemo((): SpeedBucket[] => {
     const buckets: SpeedBucket[] = [
-      { label: '0-20', count: 0, color: '#10b981' },
-      { label: '21-40', count: 0, color: '#38bdf8' },
-      { label: '41-60', count: 0, color: '#818cf8' },
-      { label: '61-80', count: 0, color: '#f59e0b' },
-      { label: '81+', count: 0, color: '#ef4444' },
+      { label: '0-20', count: 0, color: '#16a34a' },
+      { label: '21-40', count: 0, color: '#2563eb' },
+      { label: '41-60', count: 0, color: '#6366f1' },
+      { label: '61-80', count: 0, color: '#d97706' },
+      { label: '81+', count: 0, color: '#dc2626' },
     ];
     for (const s of metrics.speeds) {
       if (s <= 20) buckets[0].count++;
@@ -60,9 +60,9 @@ export const AnalyticsPage: React.FC<Props> = ({ vehicles, breachHistory, teleme
   // Status distribution
   const statusBuckets = useMemo((): StatusBucket[] => {
     return [
-      { label: 'Active', count: vehicles.filter((v) => v.status === 'active').length, color: '#10b981' },
-      { label: 'Maintenance', count: vehicles.filter((v) => v.status === 'maintenance').length, color: '#f59e0b' },
-      { label: 'Offline', count: vehicles.filter((v) => v.status === 'offline').length, color: '#64748b' },
+      { label: 'Active', count: vehicles.filter((v) => v.status === 'active').length, color: '#16a34a' },
+      { label: 'Maintenance', count: vehicles.filter((v) => v.status === 'maintenance').length, color: '#d97706' },
+      { label: 'Offline', count: vehicles.filter((v) => v.status === 'offline').length, color: '#6b7280' },
     ];
   }, [vehicles]);
 
@@ -71,10 +71,10 @@ export const AnalyticsPage: React.FC<Props> = ({ vehicles, breachHistory, teleme
   // Breach type distribution
   const breachBuckets = useMemo((): StatusBucket[] => {
     return [
-      { label: 'Entry', count: metrics.entries.length, color: '#10b981' },
-      { label: 'Exit', count: metrics.exits.length, color: '#f59e0b' },
-      { label: 'Critical', count: metrics.critical.length, color: '#ef4444' },
-      { label: 'Warning', count: metrics.warnings.length, color: '#818cf8' },
+      { label: 'Entry', count: metrics.entries.length, color: '#16a34a' },
+      { label: 'Exit', count: metrics.exits.length, color: '#d97706' },
+      { label: 'Critical', count: metrics.critical.length, color: '#dc2626' },
+      { label: 'Warning', count: metrics.warnings.length, color: '#6366f1' },
     ];
   }, [metrics]);
 
@@ -100,7 +100,7 @@ export const AnalyticsPage: React.FC<Props> = ({ vehicles, breachHistory, teleme
     <div className="page-container">
       <div className="page-header">
         <h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1.6rem', fontWeight: 700 }}>
-          <BarChart3 size={22} style={{ verticalAlign: 'middle', marginRight: '10px', color: 'var(--primary-accent)' }} />
+          <BarChart3 size={22} style={{ verticalAlign: 'middle', marginRight: '10px', color: 'var(--primary)' }} />
           Analytics
         </h1>
         <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Fleet performance overview</span>
@@ -157,7 +157,7 @@ export const AnalyticsPage: React.FC<Props> = ({ vehicles, breachHistory, teleme
         {/* Speed Distribution */}
         <div className="glass-panel" style={{ padding: '20px' }}>
           <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Gauge size={16} color="var(--primary-accent)" /> Speed Distribution
+            <Gauge size={16} color="var(--primary)" /> Speed Distribution
           </h3>
           <div className="bar-chart">
             {speedBuckets.map((b) => (
@@ -175,7 +175,7 @@ export const AnalyticsPage: React.FC<Props> = ({ vehicles, breachHistory, teleme
         {/* Fleet Status */}
         <div className="glass-panel" style={{ padding: '20px' }}>
           <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Truck size={16} color="var(--primary-accent)" /> Fleet Status
+            <Truck size={16} color="var(--primary)" /> Fleet Status
           </h3>
           <div className="bar-chart">
             {statusBuckets.map((b) => (
@@ -193,7 +193,7 @@ export const AnalyticsPage: React.FC<Props> = ({ vehicles, breachHistory, teleme
         {/* Breach Type Breakdown */}
         <div className="glass-panel" style={{ padding: '20px' }}>
           <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertTriangle size={16} color="var(--primary-accent)" /> Breach Breakdown
+            <AlertTriangle size={16} color="var(--primary)" /> Breach Breakdown
           </h3>
           <div className="bar-chart">
             {breachBuckets.map((b) => (
@@ -211,14 +211,14 @@ export const AnalyticsPage: React.FC<Props> = ({ vehicles, breachHistory, teleme
         {/* Breaches per Zone */}
         <div className="glass-panel" style={{ padding: '20px' }}>
           <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <MapPin size={16} color="var(--primary-accent)" /> Breaches per Zone
+            <MapPin size={16} color="var(--primary)" /> Breaches per Zone
           </h3>
           <div className="bar-chart">
             {zoneBreachMap.length > 0 ? zoneBreachMap.map(([name, count]) => (
               <div key={name} className="bar-row">
                 <span className="bar-label" style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
                 <div className="bar-track">
-                  <div className="bar-fill" style={{ width: `${(count / maxZoneBreaches) * 100}%`, background: 'var(--primary-accent)' }} />
+                  <div className="bar-fill" style={{ width: `${(count / maxZoneBreaches) * 100}%`, background: 'var(--primary)' }} />
                 </div>
                 <span className="bar-value">{count}</span>
               </div>
@@ -233,13 +233,13 @@ export const AnalyticsPage: React.FC<Props> = ({ vehicles, breachHistory, teleme
       {timelinePoints.length > 0 && (
         <div className="glass-panel" style={{ padding: '20px' }}>
           <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <TrendingUp size={16} color="var(--primary-accent)" /> Speed Timeline (last {timelinePoints.length} pings)
+            <TrendingUp size={16} color="var(--primary)" /> Speed Timeline (last {timelinePoints.length} pings)
           </h3>
           <div className="timeline-chart">
             {timelinePoints.map((p, i) => {
               const maxTimeline = Math.max(...timelinePoints.map((pt) => pt.speed), 1);
               const height = Math.max((p.speed / maxTimeline) * 100, 2);
-              const color = p.speed > 70 ? '#ef4444' : p.speed > 50 ? '#f59e0b' : '#38bdf8';
+              const color = p.speed > 70 ? '#dc2626' : p.speed > 50 ? '#d97706' : '#2563eb';
               return (
                 <div key={i} className="timeline-bar" title={`${p.speed} km/h at ${new Date(p.timestamp).toLocaleTimeString()}`}>
                   <div className="timeline-bar-fill" style={{ height: `${height}%`, background: color }} />
@@ -257,7 +257,7 @@ export const AnalyticsPage: React.FC<Props> = ({ vehicles, breachHistory, teleme
       {/* Vehicle Speed Leaderboard */}
       <div className="glass-panel" style={{ padding: '20px' }}>
         <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Gauge size={16} color="var(--primary-accent)" /> Vehicle Speed Leaderboard
+          <Gauge size={16} color="var(--primary)" /> Vehicle Speed Leaderboard
         </h3>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
@@ -275,10 +275,10 @@ export const AnalyticsPage: React.FC<Props> = ({ vehicles, breachHistory, teleme
                 .sort((a, b) => (b.lastSpeed || 0) - (a.lastSpeed || 0))
                 .map((v, i) => (
                   <tr key={v.vehicleId} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', color: 'var(--text-secondary)' }}>
-                    <td style={{ padding: '8px 12px', fontWeight: 600, color: i < 3 ? 'var(--primary-accent)' : 'var(--text-muted)' }}>{i + 1}</td>
+                    <td style={{ padding: '8px 12px', fontWeight: 600, color: i < 3 ? 'var(--primary)' : 'var(--text-muted)' }}>{i + 1}</td>
                     <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-main)' }}>{v.name}</td>
                     <td style={{ padding: '8px 12px' }}>
-                      <span style={{ fontWeight: 600, color: (v.lastSpeed || 0) > 70 ? '#ef4444' : (v.lastSpeed || 0) > 50 ? '#f59e0b' : 'var(--primary-accent)' }}>
+                      <span style={{ fontWeight: 600, color: (v.lastSpeed || 0) > 70 ? '#dc2626' : (v.lastSpeed || 0) > 50 ? '#d97706' : 'var(--primary)' }}>
                         {v.lastSpeed || 0} km/h
                       </span>
                     </td>

@@ -9,8 +9,8 @@ const MAX_LNG = 77.6400;
 const DEPOT_LAT = 12.9716;
 const DEPOT_LNG = 77.5946;
 
-function isLightTheme(): boolean {
-  return document.documentElement.getAttribute('data-theme') === 'light';
+function isDarkTheme(): boolean {
+  return document.documentElement.getAttribute('data-theme') === 'dark';
 }
 
 function getX(lng: number, width: number): number {
@@ -78,28 +78,242 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
       const area = canvas.parentElement?.getBoundingClientRect();
       const width = canvas.width = Math.floor(area?.width || 600);
       const height = canvas.height = Math.floor(area?.height || 380);
-      const light = isLightTheme();
+      const dark = isDarkTheme();
 
-      const bgColor = light ? '#f8fafc' : '#060913';
-      const gridColor = light ? 'rgba(100, 116, 139, 0.08)' : 'rgba(56, 189, 248, 0.05)';
-      const depotColor = '#818cf8';
-      const trajectoryColor = light ? 'rgba(2, 132, 199, 0.5)' : 'rgba(56, 189, 248, 0.6)';
-      const pulseColor = light ? 'rgba(2, 132, 199, 0.12)' : 'rgba(56, 189, 248, 0.15)';
-      const activePin = light ? '#059669' : '#10b981';
-      const offlinePin = light ? '#94a3b8' : '#64748b';
-      const selectedStroke = light ? '#0284c7' : '#38bdf8';
-      const pinStroke = light ? '#f8fafc' : '#060913';
-      const labelActive = light ? '#0284c7' : '#38bdf8';
-      const labelOffline = light ? '#64748b' : '#94a3b8';
+      const landColor = dark ? '#141414' : '#eef0f3';
+      const waterColor = dark ? '#0f1f27' : '#cfe3f2';
+      const waterEdge = dark ? '#1c3a4a' : '#9fc0d8';
+      const parkColor = dark ? '#10210c' : '#d9ead1';
+      const parkEdge = dark ? '#223d18' : '#b3cfa8';
+      const buildingColor = dark ? '#202020' : '#d6dbe1';
+      const buildingAccent = dark ? '#2c2c2c' : '#c3cad3';
+      const roadMinorCasing = dark ? '#303030' : '#cdd2d9';
+      const roadMinorFill = dark ? '#1c1c1c' : '#ffffff';
+      const roadMajorCasing = dark ? '#3a3a3a' : '#c3c9d1';
+      const roadMajorFill = dark ? '#232323' : '#ffffff';
+      const centerlineColor = dark ? 'rgba(245, 158, 11, 0.5)' : 'rgba(217, 119, 6, 0.5)';
+      const railColor = dark ? '#4a5a6e' : '#aab6c4';
+      const labelColor = dark ? '#6b7a8c' : '#8a94a0';
+      const majorLabelColor = dark ? '#7d8c9e' : '#7d8794';
+      const gridColor = dark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(100, 116, 139, 0.07)';
+      const depotColor = dark ? '#3b82f6' : '#2563eb';
+      const depotRing = dark ? 'rgba(59, 130, 246, 0.4)' : 'rgba(37, 99, 235, 0.35)';
+      const trajectoryColor = dark ? 'rgba(96, 165, 250, 0.6)' : 'rgba(37, 99, 235, 0.5)';
+      const pulseColor = dark ? 'rgba(59, 130, 246, 0.18)' : 'rgba(37, 99, 235, 0.10)';
+      const activePin = dark ? '#22c55e' : '#16a34a';
+      const offlinePin = dark ? '#64748b' : '#9ca3af';
+      const selectedStroke = dark ? '#60a5fa' : '#2563eb';
+      const pinStroke = dark ? '#000000' : '#ffffff';
+      const labelActive = dark ? '#93c5fd' : '#2563eb';
+      const labelOffline = dark ? '#94a3b8' : '#6b7280';
+      const zoneStroke = dark ? 'rgba(245, 158, 11, 0.55)' : 'rgba(217, 119, 6, 0.55)';
+      const zoneFill = dark ? 'rgba(245, 158, 11, 0.08)' : 'rgba(217, 119, 6, 0.05)';
+      const zoneLabel = dark ? '#f59e0b' : '#d97706';
 
       const vehicles = allVehiclesRef.current;
       const selected = selectedVehicleRef.current;
       const history = telemetryHistoryRef.current;
 
-      // 1. Draw Map Background grid
-      ctx.fillStyle = bgColor;
+      // --- Base map helpers (deterministic per frame) ---
+      const P = (nx: number, ny: number) => ({ x: nx * width, y: ny * height });
+
+      const mulberry32 = (seed: number) => () => {
+        let t = (seed += 0x6d2b79f5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+
+      const drawBlob = (cx: number, cy: number, r: number, seed: number, fill: string, edge: string) => {
+        const rand = mulberry32(seed);
+        const n = 16;
+        const pts: { x: number; y: number }[] = [];
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2;
+          const rr = r * (0.8 + rand() * 0.4);
+          pts.push({ x: cx + Math.cos(a) * rr, y: cy + Math.sin(a) * rr });
+        }
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 0; i < n; i++) {
+          const a = pts[i];
+          const b = pts[(i + 1) % n];
+          ctx.quadraticCurveTo(a.x, a.y, (a.x + b.x) / 2, (a.y + b.y) / 2);
+        }
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = edge;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      };
+
+      const drawPolyline = (
+        pts: [number, number][],
+        w: number,
+        casing: string,
+        fill: string,
+        centerline?: boolean,
+      ) => {
+        const pxPts = pts.map(([nx, ny]) => P(nx, ny));
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = casing;
+        ctx.lineWidth = w + 3;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        pxPts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+        ctx.stroke();
+        ctx.strokeStyle = fill;
+        ctx.lineWidth = w;
+        ctx.beginPath();
+        pxPts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+        ctx.stroke();
+        if (centerline) {
+          ctx.strokeStyle = centerlineColor;
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([10, 8]);
+          ctx.beginPath();
+          pxPts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+      };
+
+      const drawRail = (pts: [number, number][]) => {
+        const pxPts = pts.map(([nx, ny]) => P(nx, ny));
+        ctx.lineCap = 'butt';
+        ctx.strokeStyle = railColor;
+        ctx.lineWidth = 6;
+        for (let i = 0; i < pxPts.length - 1; i++) {
+          const a = pxPts[i];
+          const b = pxPts[i + 1];
+          const len = Math.hypot(b.x - a.x, b.y - a.y);
+          const steps = Math.floor(len / 22);
+          const ang = Math.atan2(b.y - a.y, b.x - a.x);
+          const px = -Math.sin(ang) * 3.5;
+          const py = Math.cos(ang) * 3.5;
+          for (let s = 0; s <= steps; s++) {
+            const t = s / steps;
+            ctx.beginPath();
+            ctx.moveTo(a.x + (b.x - a.x) * t - px, a.y + (b.y - a.y) * t - py);
+            ctx.lineTo(a.x + (b.x - a.x) * t + px, a.y + (b.y - a.y) * t + py);
+            ctx.stroke();
+          }
+        }
+        ctx.strokeStyle = railColor;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 6]);
+        ctx.beginPath();
+        pxPts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+        ctx.stroke();
+        ctx.setLineDash([]);
+      };
+
+      const drawRoadLabel = (txt: string, nx: number, ny: number, angle: number, color: string, size: number) => {
+        ctx.save();
+        ctx.translate(P(nx, ny).x, P(nx, ny).y);
+        ctx.rotate(angle);
+        ctx.fillStyle = color;
+        ctx.font = `${size}px Inter`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(txt, 0, 0);
+        ctx.restore();
+      };
+
+      // 1. Base map: land
+      ctx.fillStyle = landColor;
       ctx.fillRect(0, 0, width, height);
 
+      // 2. Water bodies
+      drawBlob(P(0.68, 0.44).x, P(0.68, 0.44).y, width * 0.06, 7, waterColor, waterEdge);
+      drawBlob(P(0.24, 0.70).x, P(0.24, 0.70).y, width * 0.032, 8, waterColor, waterEdge);
+
+      // 3. Parks / green spaces
+      drawBlob(P(0.32, 0.20).x, P(0.32, 0.20).y, width * 0.045, 11, parkColor, parkEdge);
+      drawBlob(P(0.78, 0.24).x, P(0.78, 0.24).y, width * 0.036, 12, parkColor, parkEdge);
+      drawBlob(P(0.48, 0.78).x, P(0.48, 0.78).y, width * 0.04, 13, parkColor, parkEdge);
+      drawBlob(P(0.90, 0.62).x, P(0.90, 0.62).y, width * 0.028, 14, parkColor, parkEdge);
+      drawBlob(P(0.10, 0.42).x, P(0.10, 0.42).y, width * 0.03, 15, parkColor, parkEdge);
+
+      // 4. Building blocks (urban districts)
+      const districts: [number, number, number, number, number][] = [
+        [0.40, 0.30, 0.56, 0.52, 101],
+        [0.16, 0.52, 0.30, 0.68, 102],
+        [0.72, 0.40, 0.90, 0.58, 103],
+        [0.40, 0.60, 0.56, 0.76, 104],
+        [0.06, 0.16, 0.20, 0.32, 105],
+        [0.56, 0.16, 0.66, 0.30, 106],
+        [0.84, 0.14, 0.96, 0.30, 107],
+        [0.62, 0.62, 0.74, 0.80, 108],
+        [0.28, 0.76, 0.38, 0.92, 109],
+      ];
+      districts.forEach(([x1, y1, x2, y2, seed]) => {
+        const rand = mulberry32(seed);
+        const cols = Math.max(2, Math.round((x2 - x1) / 0.022));
+        const rows = Math.max(2, Math.round((y2 - y1) / 0.022));
+        const cellW = (x2 - x1) / cols;
+        const cellH = (y2 - y1) / rows;
+        ctx.fillStyle = buildingColor;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (rand() < 0.16) continue;
+            const jx = (rand() - 0.5) * cellW * 0.3;
+            const jy = (rand() - 0.5) * cellH * 0.3;
+            const bw = cellW * (0.6 + rand() * 0.3);
+            const bh = cellH * (0.6 + rand() * 0.3);
+            ctx.fillRect(P(x1 + c * cellW + jx, y1 + r * cellH + jy).x, P(x1 + c * cellW + jx, y1 + r * cellH + jy).y, bw * width, bh * height);
+          }
+        }
+        // a few accent towers per district
+        const rand2 = mulberry32(seed + 7);
+        const towerCount = 5 + Math.floor(rand2() * 5);
+        ctx.fillStyle = buildingAccent;
+        for (let i = 0; i < towerCount; i++) {
+          const tx = x1 + rand2() * (x2 - x1);
+          const ty = y1 + rand2() * (y2 - y1);
+          const tw = 0.006 + rand2() * 0.004;
+          const th = 0.009 + rand2() * 0.006;
+          ctx.fillRect(P(tx, ty).x, P(tx, ty).y, tw * width, th * height);
+        }
+      });
+
+      // 5. Minor roads
+      const minorRoads: [number, number][][] = [
+        [[0, 0.16], [1, 0.16]],
+        [[0, 0.66], [1, 0.66]],
+        [[0.18, 0], [0.18, 1]],
+        [[0.55, 0], [0.55, 1]],
+        [[0.88, 0], [0.88, 1]],
+        [[0, 0.40], [0.42, 0.40]],
+      ];
+      minorRoads.forEach((road) => drawPolyline(road, 4, roadMinorCasing, roadMinorFill));
+
+      // 6. Major roads (arterials)
+      drawPolyline([[0, 0.30], [1, 0.30]], 10, roadMajorCasing, roadMajorFill, true);
+      drawPolyline([[0, 0.52], [1, 0.52]], 12, roadMajorCasing, roadMajorFill, true);
+      drawPolyline([[0, 0.85], [1, 0.85]], 8, roadMajorCasing, roadMajorFill);
+      drawPolyline([[0.42, 0], [0.42, 1]], 10, roadMajorCasing, roadMajorFill, true);
+      drawPolyline([[0.72, 0.06], [0.72, 1]], 9, roadMajorCasing, roadMajorFill);
+
+      // 7. Rail line
+      drawRail([[0.10, 0.92], [0.30, 0.70], [0.52, 0.10]]);
+
+      // 8. Landmarks and labels
+      ctx.font = '10px Inter';
+      ctx.fillStyle = labelColor;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText('Ulsoor Lake', P(0.68, 0.44).x - 36, P(0.68, 0.44).y + 3);
+      ctx.fillText('Cubbon Park', P(0.32, 0.20).x - 38, P(0.32, 0.20).y + 3);
+      drawRoadLabel('OUTER RING RD', 0.32, 0.275, 0, majorLabelColor, 9);
+      drawRoadLabel('MG ROAD', 0.32, 0.492, 0, majorLabelColor, 9);
+      drawRoadLabel('AIRPORT RD', 0.40, 0.42, -Math.PI / 2, majorLabelColor, 9);
+      drawRoadLabel('TECH DISTRICT', 0.48, 0.47, 0, labelColor, 8);
+      drawRoadLabel('OLD TOWN', 0.23, 0.59, 0, labelColor, 8);
+
+      // 9. Faint grid overlay
       ctx.strokeStyle = gridColor;
       ctx.lineWidth = 1;
       const gridSize = 40;
@@ -119,8 +333,8 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
       // 2. Draw Geofence Zones
       const zones = geofenceZonesRef.current;
       zones.forEach((zone) => {
-        ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
-        ctx.fillStyle = 'rgba(245, 158, 11, 0.06)';
+        ctx.strokeStyle = zoneStroke;
+        ctx.fillStyle = zoneFill;
         ctx.lineWidth = 1.5;
         ctx.setLineDash([4, 4]);
 
@@ -134,8 +348,8 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
           ctx.fill();
           ctx.stroke();
           ctx.setLineDash([]);
-          ctx.fillStyle = '#f59e0b';
-          ctx.font = '9px Inter';
+          ctx.fillStyle = zoneLabel;
+          ctx.font = '10px Inter';
           ctx.fillText(zone.name, cx + r + 4, cy + 3);
           ctx.setLineDash([4, 4]);
         }
@@ -153,22 +367,22 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
           ctx.stroke();
           ctx.setLineDash([]);
           const label = zone.coordinates[0];
-          ctx.fillStyle = '#f59e0b';
-          ctx.font = '9px Inter';
+          ctx.fillStyle = zoneLabel;
+          ctx.font = '10px Inter';
           ctx.fillText(zone.name, getX(label.lng, width) + 6, getY(label.lat, height) - 6);
           ctx.setLineDash([4, 4]);
         }
       });
       ctx.setLineDash([]);
 
-      // 3. Draw Depot
+      // 10. Draw Depot
       const depotX = getX(DEPOT_LNG, width);
       const depotY = getY(DEPOT_LAT, height);
       ctx.fillStyle = depotColor;
       ctx.beginPath();
       ctx.arc(depotX, depotY, 8, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(129, 140, 248, 0.4)';
+      ctx.strokeStyle = depotRing;
       ctx.lineWidth = 3;
       ctx.stroke();
 
@@ -176,7 +390,7 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
       ctx.font = '10px Inter';
       ctx.fillText('Central Depot', depotX + 12, depotY + 4);
 
-      // 3. Draw Trajectory Path for selected vehicle
+      // 11. Draw Trajectory Path for selected vehicle
       if (selected && history.length > 0) {
         ctx.beginPath();
         ctx.strokeStyle = trajectoryColor;
@@ -193,7 +407,7 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
         ctx.setLineDash([]);
       }
 
-      // 4. Draw All Vehicles
+      // 12. Draw All Vehicles
       const prevPositions = prevPositionsRef.current;
       vehicles.forEach((vehicle) => {
         if (!vehicle.lastLocation) return;
@@ -285,20 +499,20 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
     <div className="glass-panel map-container" ref={containerRef}>
       <div className="map-header">
         <h3 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Compass size={18} style={{ color: 'var(--primary-accent)' }} />
+          <Compass size={18} style={{ color: 'var(--primary)' }} />
           <span>Active Telemetry Map</span>
         </h3>
-        <div style={{ display: 'flex', gap: '16px', fontSize: '0.75rem', color: 'var(--text-secondary)', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981' }} />
+        <div className="legend">
+          <div className="legend-item">
+            <span className="legend-dot" style={{ backgroundColor: '#16a34a' }} />
             <span>Active</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#818cf8' }} />
+          <div className="legend-item">
+            <span className="legend-dot" style={{ backgroundColor: '#2563eb' }} />
             <span>Depot</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#64748b' }} />
+          <div className="legend-item">
+            <span className="legend-dot" style={{ backgroundColor: '#9ca3af' }} />
             <span>Offline</span>
           </div>
           <button
@@ -316,52 +530,22 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
       <div className="map-canvas-area">
         <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />
 
-        {/* HUD overlay for coordinate mapping metrics */}
-        <div style={{
-          position: 'absolute',
-          bottom: '12px',
-          left: '12px',
-          background: 'rgba(6, 9, 19, 0.85)',
-          border: '1px solid var(--border-color)',
-          padding: '8px 12px',
-          borderRadius: '6px',
-          fontSize: '0.7rem',
-          color: 'var(--text-secondary)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '4px',
-          fontFamily: 'monospace'
-        }}>
+        <div className="map-hud" style={{ bottom: '12px', left: '12px' }}>
           <div>GRID: Bangalore Metropol</div>
           <div>SW: {MIN_LAT.toFixed(4)}N, {MIN_LNG.toFixed(4)}E</div>
           <div>NE: {MAX_LAT.toFixed(4)}N, {MAX_LNG.toFixed(4)}E</div>
         </div>
 
         {selectedVehicle && (
-          <div style={{
-            position: 'absolute',
-            top: '12px',
-            right: '12px',
-            background: 'rgba(6, 9, 19, 0.85)',
-            border: '1px solid var(--border-color)',
-            padding: '8px 12px',
-            borderRadius: '6px',
-            fontSize: '0.75rem',
-            color: 'var(--text-main)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '4px'
-          }}>
+          <div className="map-hud" style={{ top: '12px', right: '12px' }}>
             <div>Target: <strong>{selectedVehicle.name}</strong></div>
             {selectedVehicle.lastLocation && (
-              <div style={{ color: 'var(--primary-accent)', fontSize: '0.7rem', fontFamily: 'monospace' }}>
+              <div className="mono">
                 POS: {selectedVehicle.lastLocation.lat.toFixed(5)}, {selectedVehicle.lastLocation.lng.toFixed(5)}
               </div>
             )}
             {telemetryHistory.length > 0 && (
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>
-                Trajectory logs: {telemetryHistory.length} readings
-              </div>
+              <div>Trajectory logs: {telemetryHistory.length} readings</div>
             )}
           </div>
         )}

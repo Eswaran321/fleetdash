@@ -137,7 +137,7 @@ export const VehiclesPage: React.FC = () => {
         {selectedVehicle.lastLocation && (
           <div className="glass-panel" style={{ padding: '20px' }}>
             <h3 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <MapPin size={16} color="var(--primary-accent)" /> Last Known Position
+              <MapPin size={16} color="var(--primary)" /> Last Known Position
             </h3>
             <div style={{ display: 'flex', gap: '24px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
               <span>Lat: <strong style={{ color: 'var(--text-main)' }}>{selectedVehicle.lastLocation.lat.toFixed(6)}</strong></span>
@@ -186,7 +186,7 @@ export const VehiclesPage: React.FC = () => {
     <div className="page-container">
       <div className="page-header">
         <h1 style={{ fontFamily: 'var(--font-family-heading)', fontSize: '1.6rem', fontWeight: 700 }}>
-          <Truck size={22} style={{ verticalAlign: 'middle', marginRight: '10px', color: 'var(--primary-accent)' }} />
+          <Truck size={22} style={{ verticalAlign: 'middle', marginRight: '10px', color: 'var(--primary)' }} />
           Fleet Vehicles
         </h1>
         <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{filtered.length} vehicles</span>
@@ -229,7 +229,7 @@ export const VehiclesPage: React.FC = () => {
             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               <div>Plate: <strong>{v.licensePlate}</strong></div>
               <div>Type: <span style={{ textTransform: 'capitalize' }}>{v.type}</span></div>
-              {v.lastSpeed !== undefined && <div>Speed: <strong style={{ color: 'var(--primary-accent)' }}>{v.lastSpeed} km/h</strong></div>}
+              {v.lastSpeed !== undefined && <div>Speed: <strong style={{ color: 'var(--primary)' }}>{v.lastSpeed} km/h</strong></div>}
             </div>
             <div className="vehicle-card-footer">
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
