@@ -1,0 +1,27 @@
+{
+  "name": "fleetdash",
+  "version": "1.0.0",
+  "description": "Production-Ready Full-Stack Real-Time Vehicle Fleet Telemetry Tracking System",
+  "main": "index.js",
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "simulate": "npm --prefix backend run simulate",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "test:backend": "npm --prefix backend run test"
+  },
+  "keywords": [
+    "fleet",
+    "telemetry",
+    "socket.io",
+    "express",
+    "react",
+    "mongodb",
+    "haversine",
+    "worker-threads"
+  ],
+  "author": "",
+  "license": "ISC"
+}
