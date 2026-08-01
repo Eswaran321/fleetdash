@@ -77,19 +77,11 @@ export const VehicleListPanel: React.FC<VehicleListPanelProps> = ({
                 onClick={() => onSelectVehicle(vehicle.vehicleId)}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{
-                    color: isSelected ? 'var(--primary-accent)' : 'var(--text-secondary)',
-                    backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'rgba(255, 255, 255, 0.05)',
-                    padding: '8px',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
+                  <div className="vehicle-icon">
                     {getVehicleIcon(vehicle.type)}
                   </div>
                   <div className="vehicle-meta">
-                    <span className="vehicle-name" style={{ color: isSelected ? 'var(--text-main)' : 'var(--text-main)' }}>
+                    <span className="vehicle-name">
                       {vehicle.name}
                     </span>
                     <span className="vehicle-sub">

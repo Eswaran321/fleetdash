@@ -8,15 +8,15 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'dark',
+  theme: 'light',
   toggleTheme: () => {},
 });
 
 function getInitialTheme(): Theme {
   try {
-    return (localStorage.getItem('fleetdash-theme') as Theme) || 'dark';
+    return (localStorage.getItem('fleetdash-theme') as Theme) || 'light';
   } catch {
-    return 'dark';
+    return 'light';
   }
 }
 

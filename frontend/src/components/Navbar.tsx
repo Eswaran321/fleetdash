@@ -19,7 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({ socketConnected, totalVehicles, 
             <Menu size={20} />
           </button>
         )}
-        <Activity size={24} style={{ color: 'var(--primary-accent)' }} />
+        <Activity size={24} style={{ color: 'var(--primary)' }} />
         <span>FleetDash</span>
       </div>
 
