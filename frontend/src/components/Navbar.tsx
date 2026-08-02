@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Moon, Radio, Sun, Truck, Menu } from 'lucide-react';
+import { Moon, Radio, Sun, Truck, Menu } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 interface NavbarProps {
@@ -19,7 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({ socketConnected, totalVehicles, 
             <Menu size={20} />
           </button>
         )}
-        <Activity size={24} style={{ color: 'var(--primary)' }} />
+        <img src="/favicon.svg" alt="FleetDash logo" style={{ width: '26px', height: '26px', borderRadius: '6px' }} />
         <span>FleetDash</span>
       </div>
 
