@@ -1,4 +1,5 @@
 import http from 'http';
+import https from 'https';
 
 interface VehicleState {
   vehicleId: string;
@@ -74,10 +75,13 @@ function postTelemetry(vehicle: VehicleState): Promise<void> {
       timestamp: new Date().toISOString(),
     });
 
+    const apiUrl = new URL(API_URL);
+    const transport = apiUrl.protocol === 'https:' ? https : http;
+
     const options = {
-      hostname: 'localhost',
-      port: 5000,
-      path: '/telemetry',
+      hostname: apiUrl.hostname,
+      port: apiUrl.port || (apiUrl.protocol === 'https:' ? 443 : 80),
+      path: apiUrl.pathname,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -85,7 +89,7 @@ function postTelemetry(vehicle: VehicleState): Promise<void> {
       },
     };
 
-    const req = http.request(options, (res) => {
+    const req = transport.request(options, (res) => {
       let body = '';
       res.on('data', (chunk) => { body += chunk; });
       res.on('end', () => {
