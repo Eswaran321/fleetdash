@@ -1,0 +1,30 @@
+# Render Blueprint — FleetDash (backend API + frontend static site)
+# Usage: push this to GitHub, then in Render choose "New > Blueprint" and select this repo.
+services:
+  - type: web
+    name: fleetdash-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    healthCheckPath: /health
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REDIS_ENABLED
+        value: "false"
+      - key: MONGO_URI
+        sync: false
+
+  - type: web
+    name: fleetdash-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://fleetdash-backend.onrender.com
+      - key: VITE_SOCKET_URL
+        value: https://fleetdash-backend.onrender.com
