@@ -11,7 +11,7 @@ interface VehicleState {
   heading: number; // angle in radians to simulate smoother path steering
 }
 
-const API_URL = 'http://localhost:5000/telemetry';
+const API_URL = process.env.SIMULATOR_URL || 'http://localhost:5000/telemetry';
 const UPDATE_INTERVAL_MS = 3000;
 
 // Initialize 10 distinct fleet vehicles with different start positions around Bangalore, India.
