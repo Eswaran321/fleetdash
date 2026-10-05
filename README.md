@@ -184,3 +184,78 @@ npm run seed
 | `SIMULATOR_URL` | Simulator | `http://localhost:5000/telemetry` | Telemetry ingestion endpoint |
 | `VITE_API_BASE_URL` | Frontend | `/api` (dev proxy) | Backend base URL (no `/api` suffix in production) |
 | `VITE_SOCKET_URL` | Frontend | `http://<host>:5000` | Socket.io server URL |
+
+---
+
+## 🧪 Running Automated Tests
+
+Backend unit and API integration suites — **4 suites, 55 tests**, using an in-memory MongoDB and with Redis disabled:
+
+```bash
+cd backend
+npm test
+```
+
+Coverage spans geofence entry/exit transitions, byte-exact binary protocol layouts, worker parsing/validation, and full API flows (ingestion, bucket persistence, vehicle upsert, breach pipeline, analytics, error handling).
+
+---
+
+## 📡 API Reference
+
+All responses use the uniform shape `{ success, data, count? }`; errors return `{ success: false, error: { message } }` (stack traces only in development).
+
+### Health Check
+- `GET /health` — Service health status.
+
+### Telemetry Ingestion
+- `POST /telemetry` — Ingest a telemetry ping.
+  ```json
+  {
+    "vehicleId": "V-001",
+    "gpsString": "12.9716,77.5946",
+    "speed": 65,
+    "fuel": 88,
+    "engineTemp": 82,
+    "timestamp": "2026-07-29T20:30:00.000Z"
+  }
+  ```
+
+### Vehicles API
+- `GET /vehicles` — List all vehicles with cached status and latest coordinates.
+- `GET /vehicles/:vehicleId` — Flattened chronological telemetry history (query param `hours`, default `24`).
+
+### Geofences API
+- `GET /geofences` — List geofence zone definitions.
+- `GET /geofences/breaches` — Breach history (query param `limit`, default `100`).
+
+### Analytics API
+- `GET /analytics/stats` — Aggregated fleet statistics.
+
+---
+
+## 🌐 Deployment (Render)
+
+The repo includes a `render.yaml` Blueprint. If the Blueprint cannot sync (e.g., the `render.yaml` is not on the repository's default branch), create the services manually from the relevant branch:
+
+**Backend — Web Service**
+- Root Directory: `backend` · Runtime: Node
+- Build: `npm install && npm run build` · Start: `npm start` · Health Check: `/health`
+- Env vars: `MONGO_URI` (full URI **including the `/fleetdash` database name**), `REDIS_ENABLED=false`, `NODE_ENV=production`
+- MongoDB Atlas: whitelist `0.0.0.0/0` (Network Access) so Render's egress IPs can connect
+
+**Frontend — Static Site**
+- Root Directory: `frontend` · Build: `npm install && npm run build` · Publish Directory: `dist`
+- Env vars (set **before** build): `VITE_API_BASE_URL=https://<backend>.onrender.com`, `VITE_SOCKET_URL=https://<backend>.onrender.com`
+- Add an SPA rewrite `/*` → `/index.html` (200) for client-side routes
+
+Once deployed, point the simulator at the live backend to feed it live data:
+```bash
+$env:SIMULATOR_URL="https://<backend>.onrender.com/telemetry"
+npm --prefix backend run simulate
+```
+
+---
+
+## 📄 License
+
+ISC License.
