@@ -83,3 +83,104 @@ flowchart TD
 | **Testing** | Jest, ts-jest, Supertest, mongodb-memory-server |
 | **Load Testing** | k6 |
 | **Deployment** | Render (web service + static site), MongoDB Atlas |
+
+---
+
+## 📁 Project Structure
+
+```
+fleetdash/
+├── backend/
+│   ├── src/
+│   │   ├── config/         # MongoDB + Redis connection setup
+│   │   ├── controllers/    # telemetry, vehicle, geofence, analytics handlers
+│   │   ├── middleware/     # express-validator rules + centralized error handler
+│   │   ├── models/         # TelemetryBucket (bucket pattern) + Vehicle read-model
+│   │   ├── routes/         # API route namespaces
+│   │   ├── services/       # geofenceService, telemetryBroadcast (Redis → Socket.io)
+│   │   ├── utils/          # binaryProtocol encoder, Winston logger
+│   │   ├── workers/        # workerPool + parser (Haversine + validation)
+│   │   ├── app.ts          # Express app wiring
+│   │   ├── server.ts       # HTTP + Socket.io bootstrap
+│   │   └── seed.ts         # Database seeder (10 demo vehicles)
+│   └── tests/              # Jest suites (api, binaryProtocol, geofenceService, workerPool)
+├── frontend/
+│   └── src/
+│       ├── components/     # Navbar, Sidebar, MapPlaceholder, TelemetryChart, ...
+│       ├── pages/          # Dashboard, Vehicles, Geofences, Analytics, Settings
+│       ├── services/       # api client + binaryProtocol decoder
+│       └── App.tsx         # routing + realtime wiring
+├── simulator.ts            # standalone telemetry generator
+└── render.yaml             # Render Blueprint
+```
+
+---
+
+## 🚀 Quick Start
+
+### 1. Installation
+
+```bash
+# Install backend dependencies
+cd backend && npm install
+
+# Install frontend dependencies
+cd ../frontend && npm install
+```
+
+### 2. Launch Services
+
+- **Backend Service (Port 5000)** — with zero-setup in-memory MongoDB:
+  ```bash
+  cd backend
+  # macOS / Linux
+  USE_IN_MEMORY_DB=true npm run dev
+  # Windows PowerShell
+  $env:USE_IN_MEMORY_DB='true'; npm run dev
+  ```
+
+- **Simulator (Separate Terminal)**:
+  ```bash
+  cd backend
+  npm run simulate
+  ```
+  To stream telemetry to a deployed/remote backend instead of localhost:
+  ```bash
+  # Windows PowerShell
+  $env:SIMULATOR_URL="https://your-backend.onrender.com/telemetry"
+  npm run simulate
+  ```
+
+- **Frontend Client (Port 5173)**:
+  ```bash
+  cd frontend
+  npm run dev
+  ```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### 3. Seed Demo Data (Optional)
+
+Insert 10 fleet vehicles directly into MongoDB:
+
+```bash
+cd backend
+$env:MONGO_URI="mongodb+srv://<user>:<password>@<cluster>.mongodb.net/fleetdash"
+npm run seed
+```
+
+---
+
+## ⚙️ Environment Variables
+
+| Variable | Service | Default | Purpose |
+|---|---|---|---|
+| `MONGO_URI` | Backend | `mongodb://127.0.0.1:27017/fleetdash` | MongoDB connection string (**must include the database name**) |
+| `USE_IN_MEMORY_DB` | Backend | `false` | Boot a zero-setup in-memory MongoDB |
+| `REDIS_ENABLED` | Backend | `true` | Set `false` to skip Redis and use direct Socket.io broadcast |
+| `REDIS_URL` | Backend | `redis://localhost:6379` | Redis connection string |
+| `PORT` | Backend | `5000` | HTTP port (Render injects this automatically) |
+| `NODE_ENV` | Backend | `development` | `production` loads the compiled worker |
+| `SIMULATOR_URL` | Simulator | `http://localhost:5000/telemetry` | Telemetry ingestion endpoint |
+| `VITE_API_BASE_URL` | Frontend | `/api` (dev proxy) | Backend base URL (no `/api` suffix in production) |
+| `VITE_SOCKET_URL` | Frontend | `http://<host>:5000` | Socket.io server URL |
